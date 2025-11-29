@@ -54,6 +54,20 @@ const Analytics = ({ darkMode }) => {
             // Fetch all transactions
             const transactions = await transactionAPI.getAll();
             
+            // Ensure transactions is an array
+            if (!Array.isArray(transactions)) {
+                setAnalytics({
+                    totalIncome: 0,
+                    totalExpense: 0,
+                    balance: 0,
+                    monthlyData: [],
+                    avgIncome: 0,
+                    avgExpense: 0
+                });
+                setTransactions([]);
+                return;
+            }
+            
             // Filter transactions based on report type
             const filteredTransactions = filterTransactionsByReportType(transactions, reportType);
             

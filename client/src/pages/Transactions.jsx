@@ -18,12 +18,18 @@ const Transactions = ({ darkMode }) => {
     const loadTransactions = async () => {
         try {
             const data = await transactionAPI.getAll();
+            // Ensure data is an array
+            if (!Array.isArray(data)) {
+                setTransactions([]);
+                return;
+            }
             setTransactions(data.map(t => ({
                 ...t,
                 date: new Date(t.transaction_date || t.created_at)
             })));
         } catch (err) {
             console.error('Error loading transactions:', err);
+            setTransactions([]);
         } finally {
             setLoading(false);
         }

@@ -18,6 +18,13 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDate, setSelectedDate] = useState(null);
 
+    // Parse date helper function
+    const parseDate = (dateStr) => {
+        // Parse DD/MM/YYYY format
+        const [day, month, year] = dateStr.split('/');
+        return new Date(year, month - 1, day);
+    };
+
     useEffect(() => {
         loadTransactions();
     }, []);
@@ -28,32 +35,33 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
         try {
             const transactions = await transactionAPI.getAll();
 
+            // Ensure transactions is an array
+            if (!Array.isArray(transactions)) {
+                setData({ transactions: [] });
+                return;
+            }
+
             // Convert to frontend format
             const formattedTransactions = transactions.map(t => ({
                 id: t.id,
                 type: t.type === 'income' ? 'Income' : 'Expense',
-                amount: t.amount,
-                balance: t.balance,
-                description: t.description,
+                amount: t.amount || 0,
+                balance: t.balance || 0,
+                description: t.description || '',
                 dateStr: t.transaction_date || new Date(t.created_at).toLocaleDateString(),
                 date: t.transaction_date ? parseDate(t.transaction_date) : new Date(t.created_at),
-                from_person: t.from_person,
-                ref_no: t.ref_no
+                from_person: t.from_person || '',
+                ref_no: t.ref_no || ''
             }));
 
             setData({ transactions: formattedTransactions });
         } catch (err) {
             console.error('Error loading transactions:', err);
             setError('Failed to load transactions');
+            setData({ transactions: [] });
         } finally {
             setLoading(false);
         }
-    };
-
-    const parseDate = (dateStr) => {
-        // Parse DD/MM/YYYY format
-        const [day, month, year] = dateStr.split('/');
-        return new Date(year, month - 1, day);
     };
 
     const handleSMSSuccess = () => {

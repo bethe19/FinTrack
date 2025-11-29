@@ -12,6 +12,7 @@ const corsOptions = {
     origin: process.env.CORS_ORIGIN === '*' ? '*' : process.env.CORS_ORIGIN?.split(',') || '*',
     credentials: true
 };
+
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.text());

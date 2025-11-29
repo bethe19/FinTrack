@@ -171,9 +171,11 @@ const Settings = ({ darkMode }) => {
     };
 
     const getInitials = (name) => {
-        if (!name) return '?';
+        if (!name || typeof name !== 'string' || !name.trim()) return '?';
         return name
+            .trim()
             .split(' ')
+            .filter(word => word.length > 0)
             .map(word => word[0])
             .join('')
             .toUpperCase()

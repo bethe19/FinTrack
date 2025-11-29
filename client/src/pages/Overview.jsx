@@ -67,6 +67,12 @@ const Overview = ({ darkMode }) => {
                 setProfile(profileData);
             }
 
+            // Ensure transactions is an array
+            if (!Array.isArray(transactions)) {
+                setData({ transactions: [], stats: analytics || {} });
+                return;
+            }
+
             let formatted = transactions.map(t => ({
                 ...t,
                 date: new Date(t.transaction_date || t.created_at),
