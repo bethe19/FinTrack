@@ -1,6 +1,7 @@
+import { getToken, getAuthHeader } from '../utils/auth';
+
 // Use environment variable or fallback to local proxy for development
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-import { getToken, getAuthHeader } from '../utils/auth';
 
 // Helper function to make authenticated requests
 const authenticatedFetch = async (url, options = {}) => {

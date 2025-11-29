@@ -52,33 +52,35 @@ db.serialize(() => {
   `);
 
     // Migrate existing data: Add user_id columns if they don't exist
-    db.run(`
-      PRAGMA table_info(profiles)
-    `, (err, rows) => {
-        if (!err && rows) {
+    // Note: This migration adds nullable user_id columns for existing tables
+    // Existing data will have NULL user_id, which should be handled by application logic
+    db.all(`PRAGMA table_info(profiles)`, (err, rows) => {
+        if (!err && rows && rows.length > 0) {
             const hasUserId = rows.some(col => col.name === 'user_id');
             if (!hasUserId) {
-                // Migration: Add user_id column to profiles
-                db.run(`
-                  ALTER TABLE profiles ADD COLUMN user_id INTEGER
-                `, (err) => {
-                    if (err) console.error('Migration error (profiles.user_id):', err);
+                // Migration: Add user_id column to profiles (nullable for existing data)
+                db.run(`ALTER TABLE profiles ADD COLUMN user_id INTEGER`, (err) => {
+                    if (err) {
+                        console.error('Migration error (profiles.user_id):', err);
+                    } else {
+                        console.log('Migration: Added user_id column to profiles table');
+                    }
                 });
             }
         }
     });
 
-    db.run(`
-      PRAGMA table_info(transactions)
-    `, (err, rows) => {
-        if (!err && rows) {
+    db.all(`PRAGMA table_info(transactions)`, (err, rows) => {
+        if (!err && rows && rows.length > 0) {
             const hasUserId = rows.some(col => col.name === 'user_id');
             if (!hasUserId) {
-                // Migration: Add user_id column to transactions
-                db.run(`
-                  ALTER TABLE transactions ADD COLUMN user_id INTEGER
-                `, (err) => {
-                    if (err) console.error('Migration error (transactions.user_id):', err);
+                // Migration: Add user_id column to transactions (nullable for existing data)
+                db.run(`ALTER TABLE transactions ADD COLUMN user_id INTEGER`, (err) => {
+                    if (err) {
+                        console.error('Migration error (transactions.user_id):', err);
+                    } else {
+                        console.log('Migration: Added user_id column to transactions table');
+                    }
                 });
             }
         }

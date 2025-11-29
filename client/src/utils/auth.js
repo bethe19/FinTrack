@@ -24,6 +24,13 @@ export const removeToken = () => {
 };
 
 /**
+ * Remove user info
+ */
+export const removeUser = () => {
+    localStorage.removeItem(USER_KEY);
+};
+
+/**
  * Get stored user info
  */
 export const getUser = () => {
