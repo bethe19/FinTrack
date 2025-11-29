@@ -161,6 +161,61 @@ db.serialize(() => {
 
     console.log('Database initialized successfully');
     
+    // Function to create default admin user
+    const createDefaultAdmin = async () => {
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+        
+        // Skip admin creation if credentials are not provided
+        if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+            console.log('ℹ️  Admin credentials not provided. Skipping default admin user creation.');
+            console.log('   Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables to auto-create admin user.');
+            return;
+        }
+        
+        const { hashPassword } = require('./utils/auth');
+        
+        getUserByEmail(ADMIN_EMAIL, async (err, existingUser) => {
+            if (err) {
+                console.error('Error checking for default admin user:', err);
+                return;
+            }
+            
+            if (existingUser) {
+                // Check if user is already admin
+                if (existingUser.role === 'admin') {
+                    console.log('✅ Default admin user already exists');
+                    return;
+                }
+                
+                // Update existing user to admin
+                db.run('UPDATE users SET role = ? WHERE email = ?', ['admin', ADMIN_EMAIL], (err) => {
+                    if (err) {
+                        console.error('Error updating user to admin:', err);
+                    } else {
+                        console.log('✅ Default admin user role updated');
+                    }
+                });
+                return;
+            }
+            
+            // Create new admin user
+            try {
+                const passwordHash = await hashPassword(ADMIN_PASSWORD);
+                createUser(ADMIN_EMAIL, passwordHash, 'admin', (err, user) => {
+                    if (err) {
+                        console.error('Error creating default admin user:', err);
+                    } else {
+                        console.log('✅ Default admin user created successfully');
+                        console.log(`   Email: ${ADMIN_EMAIL}`);
+                    }
+                });
+            } catch (error) {
+                console.error('Error hashing password for default admin:', error);
+            }
+        });
+    };
+    
     // Create remaining indexes after a short delay to allow migrations to complete
     setTimeout(() => {
         db.run(`CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)`, (err) => {
@@ -175,7 +230,10 @@ db.serialize(() => {
         });
         db.run(`CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(user_id)`);
         db.run(`CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at)`);
-    }, 500);
+        
+        // Auto-create default admin user
+        createDefaultAdmin();
+    }, 1000);
 });
 
 // User operations

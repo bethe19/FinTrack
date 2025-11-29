@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminAPI } from '../../services/api';
+import { adminAPI } from '../services/api';
 import { Loader2, Activity, Filter, Calendar } from 'lucide-react';
 
 const AdminActivities = ({ darkMode }) => {

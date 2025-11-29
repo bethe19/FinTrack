@@ -2,17 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Layout from './components/Layout';
-import AdminLayout from './components/AdminLayout';
 import Overview from './pages/Overview';
 import Analytics from './pages/Analytics';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminActivities from './pages/admin/AdminActivities';
-import AdminReports from './pages/admin/AdminReports';
 import { healthCheck } from './services/api';
-import { isAuthenticated, removeToken, removeUser, getUser } from './utils/auth';
+import { isAuthenticated, removeToken, removeUser } from './utils/auth';
 
 function App() {
     const [authenticated, setAuthenticated] = useState(null);
@@ -87,27 +82,9 @@ function App() {
         return <Login onLogin={handleLogin} darkMode={darkMode} />;
     }
 
-    const user = getUser();
-    const isAdmin = user?.role === 'admin';
-
     return (
         <Router>
             <Routes>
-                {/* Admin Routes */}
-                {isAdmin && (
-                    <Route path="/admin/*" element={
-                        <AdminLayout darkMode={darkMode} setDarkMode={setDarkMode} onLogout={handleLogout}>
-                            <Routes>
-                                <Route path="/" element={<AdminDashboard darkMode={darkMode} />} />
-                                <Route path="/users" element={<AdminUsers darkMode={darkMode} />} />
-                                <Route path="/activities" element={<AdminActivities darkMode={darkMode} />} />
-                                <Route path="/reports" element={<AdminReports darkMode={darkMode} />} />
-                                <Route path="*" element={<Navigate to="/admin" replace />} />
-                            </Routes>
-                        </AdminLayout>
-                    } />
-                )}
-                
                 {/* Regular User Routes */}
                 <Route path="/*" element={
                     <Layout darkMode={darkMode} setDarkMode={setDarkMode} onLogout={handleLogout}>

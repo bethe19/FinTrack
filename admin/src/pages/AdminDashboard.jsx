@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { adminAPI } from '../../services/api';
+import { adminAPI } from '../services/api';
 import { Loader2, Users, Activity, TrendingUp, FileText, Shield } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = ({ darkMode }) => {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
     const [activityStats, setActivityStats] = useState([]);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         loadData();
@@ -174,7 +176,7 @@ const AdminDashboard = ({ darkMode }) => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button
-                        onClick={() => window.location.href = '/admin/users'}
+                        onClick={() => navigate('/users')}
                         className={`p-4 border text-left ${darkMode 
                             ? 'border-gray-800 hover:bg-gray-900' 
                             : 'border-gray-300 hover:bg-gray-50'
@@ -187,7 +189,7 @@ const AdminDashboard = ({ darkMode }) => {
                         </p>
                     </button>
                     <button
-                        onClick={() => window.location.href = '/admin/activities'}
+                        onClick={() => navigate('/activities')}
                         className={`p-4 border text-left ${darkMode 
                             ? 'border-gray-800 hover:bg-gray-900' 
                             : 'border-gray-300 hover:bg-gray-50'
@@ -200,7 +202,7 @@ const AdminDashboard = ({ darkMode }) => {
                         </p>
                     </button>
                     <button
-                        onClick={() => window.location.href = '/admin/reports'}
+                        onClick={() => navigate('/reports')}
                         className={`p-4 border text-left ${darkMode 
                             ? 'border-gray-800 hover:bg-gray-900' 
                             : 'border-gray-300 hover:bg-gray-50'

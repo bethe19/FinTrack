@@ -9,15 +9,15 @@ const AdminLayout = ({ children, darkMode, setDarkMode, onLogout }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const navigation = [
-        { name: 'Dashboard', path: '/admin', icon: Home },
-        { name: 'Users', path: '/admin/users', icon: Users },
-        { name: 'Activities', path: '/admin/activities', icon: Activity },
-        { name: 'Reports', path: '/admin/reports', icon: BarChart3 },
+        { name: 'Dashboard', path: '/', icon: Home },
+        { name: 'Users', path: '/users', icon: Users },
+        { name: 'Activities', path: '/activities', icon: Activity },
+        { name: 'Reports', path: '/reports', icon: BarChart3 },
     ];
 
     const isActive = (path) => {
-        if (path === '/admin') {
-            return location.pathname === '/admin';
+        if (path === '/') {
+            return location.pathname === '/';
         }
         return location.pathname.startsWith(path);
     };
