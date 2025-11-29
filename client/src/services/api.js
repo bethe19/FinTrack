@@ -6,6 +6,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 // Helper function to make authenticated requests
 const authenticatedFetch = async (url, options = {}) => {
     const token = getToken();
+    
+    if (!token) {
+        throw new Error('No authentication token found. Please login again.');
+    }
+    
     const headers = {
         'Content-Type': 'application/json',
         ...getAuthHeader(),
@@ -66,9 +71,45 @@ export const authAPI = {
 // Profile API
 export const profileAPI = {
     get: async () => {
-        const response = await authenticatedFetch(`${API_BASE_URL}/profile`);
-        if (!response.ok) throw new Error('Failed to fetch profile');
-        return response.json();
+        try {
+            const response = await authenticatedFetch(`${API_BASE_URL}/profile`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    // Profile doesn't exist yet, return null
+                    return null;
+                }
+                const error = await response.json().catch(() => ({ error: 'Failed to fetch profile' }));
+                throw new Error(error.error || 'Failed to fetch profile');
+            }
+            
+            // Parse JSON response directly
+            const data = await response.json();
+            
+            // Handle null or undefined responses
+            if (data === null || data === undefined) {
+                return null;
+            }
+            
+            // If data is an empty object, return null
+            if (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0) {
+                return null;
+            }
+            
+            // Return the profile data
+            return data;
+        } catch (error) {
+            console.error('Profile API error:', error);
+            
+            // If it's an authentication error, re-throw it
+            if (error.message && (error.message.includes('Authentication') || error.message.includes('token') || error.message.includes('login'))) {
+                throw error;
+            }
+            
+            // For other errors (like network errors), return null (profile doesn't exist)
+            // This allows the UI to show the "no profile" state instead of crashing
+            return null;
+        }
     },
 
     createOrUpdate: async (profileData) => {
@@ -77,7 +118,10 @@ export const profileAPI = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profileData)
         });
-        if (!response.ok) throw new Error('Failed to save profile');
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Failed to save profile' }));
+            throw new Error(error.error || 'Failed to save profile');
+        }
         return response.json();
     }
 };

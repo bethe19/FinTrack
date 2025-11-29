@@ -1,4 +1,4 @@
-const { createUser, getUserByEmail } = require('../database');
+const { createUser, getUserByEmail, createOrUpdateProfile } = require('../database');
 const { hashPassword, comparePassword, generateToken } = require('../utils/auth');
 
 /**
@@ -41,15 +41,39 @@ const registerHandler = async (req, res) => {
                 // Generate token
                 const token = generateToken(user.id);
 
-                res.status(201).json({
-                    success: true,
-                    message: 'User registered successfully',
-                    token,
-                    user: {
-                        id: user.id,
-                        email: user.email
-                    }
-                });
+                // Create initial profile with name if provided
+                if (name && name.trim()) {
+                    createOrUpdateProfile(user.id, {
+                        name: name.trim(),
+                        phone_number: null,
+                        account_number: null
+                    }, (profileErr) => {
+                        if (profileErr) {
+                            console.error('Error creating initial profile:', profileErr);
+                            // Continue anyway - profile can be created later
+                        }
+                        
+                        res.status(201).json({
+                            success: true,
+                            message: 'User registered successfully',
+                            token,
+                            user: {
+                                id: user.id,
+                                email: user.email
+                            }
+                        });
+                    });
+                } else {
+                    res.status(201).json({
+                        success: true,
+                        message: 'User registered successfully',
+                        token,
+                        user: {
+                            id: user.id,
+                            email: user.email
+                        }
+                    });
+                }
             });
         });
     } catch (error) {

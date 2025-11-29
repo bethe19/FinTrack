@@ -17,6 +17,11 @@ const Settings = ({ darkMode }) => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
+    // Store original values for cancel functionality
+    const [originalName, setOriginalName] = useState('');
+    const [originalPhone, setOriginalPhone] = useState('');
+    const [originalAccount, setOriginalAccount] = useState('');
+
     useEffect(() => {
         loadProfile();
         setSelectedReportType(getReportType());
@@ -29,38 +34,116 @@ const Settings = ({ darkMode }) => {
         }
     }, [loading, profile]);
 
+    const showAlert = (type, message) => {
+        setAlert({ type, message });
+    };
+
     const loadProfile = async () => {
         try {
+            setLoading(true);
             const data = await profileAPI.get();
-            if (data) {
+            
+            // Check if we have valid profile data
+            // Profile data should have at least an id or name field
+            if (data && typeof data === 'object' && !Array.isArray(data) && (data.id || data.name)) {
+                // Profile exists - populate form fields
                 setProfile(data);
-                setName(data.name || '');
-                setPhone(data.phone_number || '');
-                setAccount(data.account_number || '');
+                
+                // Extract profile data with proper fallbacks
+                const profileName = (data.name && typeof data.name === 'string' && data.name.trim()) || '';
+                const profilePhone = (data.phone_number && typeof data.phone_number === 'string' && data.phone_number.trim()) || '';
+                const profileAccount = (data.account_number && typeof data.account_number === 'string' && data.account_number.trim()) || '';
+                
+                // Update state with profile data
+                setName(profileName);
+                setPhone(profilePhone);
+                setAccount(profileAccount);
+                
+                // Store original values for cancel functionality
+                setOriginalName(profileName);
+                setOriginalPhone(profilePhone);
+                setOriginalAccount(profileAccount);
+            } else {
+                // No profile exists yet - this is normal for new users
+                setProfile(null);
+                setName('');
+                setPhone('');
+                setAccount('');
+                setOriginalName('');
+                setOriginalPhone('');
+                setOriginalAccount('');
             }
         } catch (err) {
             console.error('Error loading profile:', err);
+            // Handle authentication errors differently
+            if (err.message && err.message.includes('Authentication')) {
+                showAlert('error', 'Authentication failed. Please login again.');
+                // Optionally redirect to login
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else if (err.message && !err.message.includes('404')) {
+                showAlert('error', `Failed to load profile: ${err.message}`);
+            }
+            setProfile(null);
+            setName('');
+            setPhone('');
+            setAccount('');
+            setOriginalName('');
+            setOriginalPhone('');
+            setOriginalAccount('');
         } finally {
             setLoading(false);
         }
     };
 
-    const showAlert = (type, message) => {
-        setAlert({ type, message });
-    };
-
     const handleSave = async () => {
+        if (!name.trim()) {
+            showAlert('error', 'Name is required');
+            return;
+        }
+
         setSaving(true);
         try {
-            await profileAPI.createOrUpdate({ name, phone_number: phone, account_number: account });
+            const response = await profileAPI.createOrUpdate({ 
+                name: name.trim(), 
+                phone_number: (phone && phone.trim()) || null, 
+                account_number: (account && account.trim()) || null 
+            });
+            
             showAlert('success', 'Profile updated successfully!');
-            loadProfile();
+            
+            // If response includes profile data, use it directly
+            if (response && response.profile) {
+                const profileData = response.profile;
+                setProfile(profileData);
+                setName(profileData.name || '');
+                setPhone(profileData.phone_number || '');
+                setAccount(profileData.account_number || '');
+                setOriginalName(profileData.name || '');
+                setOriginalPhone(profileData.phone_number || '');
+                setOriginalAccount(profileData.account_number || '');
+            } else {
+                // Otherwise reload profile to get updated data
+                await loadProfile();
+            }
+            
+            setIsEditing(false);
         } catch (err) {
             console.error('Error saving profile:', err);
-            showAlert('error', 'Failed to update profile');
+            const errorMessage = err.message || 'Failed to update profile. Please try again.';
+            showAlert('error', errorMessage);
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleCancel = () => {
+        // Reset to original values
+        setName(originalName);
+        setPhone(originalPhone);
+        setAccount(originalAccount);
+        setIsEditing(false);
     };
 
     const handleReportTypeChange = (type) => {
@@ -73,6 +156,7 @@ const Settings = ({ darkMode }) => {
     };
 
     const handleDeleteAll = async () => {
+        setShowDeleteConfirm(false);
         try {
             await transactionAPI.deleteAll();
             showAlert('success', 'All transactions deleted successfully');
@@ -81,7 +165,8 @@ const Settings = ({ darkMode }) => {
             }, 1500);
         } catch (err) {
             console.error('Error deleting transactions:', err);
-            showAlert('error', 'Failed to delete transactions');
+            const errorMessage = err.message || 'Failed to delete transactions. Please try again.';
+            showAlert('error', errorMessage);
         }
     };
 
@@ -172,12 +257,20 @@ const Settings = ({ darkMode }) => {
                                         <span className="text-xs truncate">{phone}</span>
                                     </div>
                                 )}
-                                {account && (
+                                {account && account.length >= 4 && (
                                     <div className={`flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 ${
                                         darkMode ? 'bg-gray-900 text-gray-300' : 'bg-gray-100 text-gray-700'
                                     }`}>
                                         <Wallet className="w-3 h-3 sm:w-4 sm:h-4" />
                                         <span className="text-xs truncate">{account.slice(0, 4)}****{account.slice(-4)}</span>
+                                    </div>
+                                )}
+                                {account && account.length < 4 && (
+                                    <div className={`flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 ${
+                                        darkMode ? 'bg-gray-900 text-gray-300' : 'bg-gray-100 text-gray-700'
+                                    }`}>
+                                        <Wallet className="w-3 h-3 sm:w-4 sm:h-4" />
+                                        <span className="text-xs truncate">{account}</span>
                                     </div>
                                 )}
                             </div>
@@ -195,7 +288,7 @@ const Settings = ({ darkMode }) => {
                     </h3>
                     {isEditing && (
                         <button
-                            onClick={() => setIsEditing(false)}
+                            onClick={handleCancel}
                             className={`text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 border transition-colors ${
                                 darkMode
                                     ? 'border-gray-800 text-gray-400 hover:bg-gray-900'
@@ -269,13 +362,10 @@ const Settings = ({ darkMode }) => {
 
                     {isEditing && (
                         <button
-                            onClick={async () => {
-                                await handleSave();
-                                setIsEditing(false);
-                            }}
-                            disabled={saving || !name}
+                            onClick={handleSave}
+                            disabled={saving || !name.trim()}
                             className={`w-full py-3 sm:py-4 border-2 font-bold text-sm sm:text-base lg:text-lg flex items-center justify-center gap-2 sm:gap-3 transition-all ${
-                                saving || !name
+                                saving || !name.trim()
                                     ? darkMode 
                                         ? 'bg-gray-900 border-gray-800 text-gray-600 cursor-not-allowed' 
                                         : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'

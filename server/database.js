@@ -52,10 +52,14 @@ db.serialize(() => {
   `);
 
     // Migrate existing data: Add user_id columns if they don't exist
-    // Note: This migration adds nullable user_id columns for existing tables
-    // Existing data will have NULL user_id, which should be handled by application logic
+    // Check if user_id column exists in profiles table and add if missing
     db.all(`PRAGMA table_info(profiles)`, (err, rows) => {
-        if (!err && rows && rows.length > 0) {
+        if (err) {
+            console.error('Error checking profiles columns:', err);
+            return;
+        }
+        
+        if (rows && rows.length > 0) {
             const hasUserId = rows.some(col => col.name === 'user_id');
             if (!hasUserId) {
                 // Migration: Add user_id column to profiles (nullable for existing data)
@@ -70,8 +74,14 @@ db.serialize(() => {
         }
     });
 
+    // Check if user_id column exists in transactions table and add if missing
     db.all(`PRAGMA table_info(transactions)`, (err, rows) => {
-        if (!err && rows && rows.length > 0) {
+        if (err) {
+            console.error('Error checking transactions columns:', err);
+            return;
+        }
+        
+        if (rows && rows.length > 0) {
             const hasUserId = rows.some(col => col.name === 'user_id');
             if (!hasUserId) {
                 // Migration: Add user_id column to transactions (nullable for existing data)

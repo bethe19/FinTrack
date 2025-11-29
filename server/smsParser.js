@@ -72,7 +72,7 @@ const parseCreditMessage = (sms) => {
 // Example: "Dear Bethe your Account 1****4624 has been debited with ETB 100.57. Your Current Balance is ETB 28532.61"
 const parseDebitMessage = (sms) => {
     const patterns = {
-        amount: /debited with ETB ([\d,]+\.?\d*)/i,
+        amount: /debited with ETB ([\d,]+\.?\d*)/i || /have transfered ETB ([\d,]+\.?\d*)/i,
         balance: /Current Balance is ETB ([\d,]+\.?\d*)/i,
     };
 
