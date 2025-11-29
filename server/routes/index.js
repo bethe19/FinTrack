@@ -7,6 +7,7 @@ const profileRoutes = require('./profileRoutes');
 const transactionRoutes = require('./transactionRoutes');
 const analyticsRoutes = require('./analyticsRoutes');
 const healthRoutes = require('./healthRoutes');
+const adminRoutes = require('./adminRoutes');
 const {
     processSMSHandler,
     uploadCSVHandler
@@ -27,6 +28,9 @@ router.use('/auth', authRoutes);
 router.use('/profile', authenticate, profileRoutes);
 router.use('/transactions', authenticate, transactionRoutes);
 router.use('/analytics', authenticate, analyticsRoutes);
+
+// Admin routes (admin authentication required)
+router.use('/admin', adminRoutes);
 
 // Protected endpoints (authentication required)
 router.post('/sms', authenticate, processSMSHandler);

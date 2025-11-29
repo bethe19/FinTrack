@@ -1,4 +1,4 @@
-const { createUser, getUserByEmail, createOrUpdateProfile } = require('../database');
+const { createUser, getUserByEmail, createOrUpdateProfile, logActivity } = require('../database');
 const { hashPassword, comparePassword, generateToken } = require('../utils/auth');
 
 /**
@@ -31,8 +31,8 @@ const registerHandler = async (req, res) => {
             // Hash password
             const passwordHash = await hashPassword(password);
 
-            // Create user
-            createUser(email, passwordHash, async (err, user) => {
+            // Create user (default role is 'user')
+            createUser(email, passwordHash, 'user', async (err, user) => {
                 if (err) {
                     console.error('Error creating user:', err);
                     return res.status(500).json({ error: 'Failed to create user' });
@@ -40,6 +40,19 @@ const registerHandler = async (req, res) => {
 
                 // Generate token
                 const token = generateToken(user.id);
+
+                // Log activity
+                const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
+                const userAgent = req.headers['user-agent'] || 'unknown';
+                logActivity({
+                    user_id: user.id,
+                    action: 'REGISTER',
+                    entity_type: 'user',
+                    entity_id: user.id,
+                    details: null,
+                    ip_address: ipAddress,
+                    user_agent: userAgent
+                }, () => {});
 
                 // Create initial profile with name if provided
                 if (name && name.trim()) {
@@ -59,7 +72,8 @@ const registerHandler = async (req, res) => {
                             token,
                             user: {
                                 id: user.id,
-                                email: user.email
+                                email: user.email,
+                                role: user.role || 'user'
                             }
                         });
                     });
@@ -70,7 +84,8 @@ const registerHandler = async (req, res) => {
                         token,
                         user: {
                             id: user.id,
-                            email: user.email
+                            email: user.email,
+                            role: user.role || 'user'
                         }
                     });
                 }
@@ -114,13 +129,27 @@ const loginHandler = async (req, res) => {
             // Generate token
             const token = generateToken(user.id);
 
+            // Log activity
+            const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
+            const userAgent = req.headers['user-agent'] || 'unknown';
+            logActivity({
+                user_id: user.id,
+                action: 'LOGIN',
+                entity_type: 'user',
+                entity_id: user.id,
+                details: null,
+                ip_address: ipAddress,
+                user_agent: userAgent
+            }, () => {});
+
             res.json({
                 success: true,
                 message: 'Login successful',
                 token,
                 user: {
                     id: user.id,
-                    email: user.email
+                    email: user.email,
+                    role: user.role || 'user'
                 }
             });
         });

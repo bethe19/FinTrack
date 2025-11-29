@@ -4,6 +4,8 @@ A modern, full-stack finance tracking application built with React and Node.js. 
 
 ## Features
 
+### User Features
+
 - **User Authentication** - Secure login and registration with JWT tokens
 - **Transaction Management** - Add, view, and manage income and expense transactions
 - **CSV Import** - Upload and parse transaction data from CSV files
@@ -13,6 +15,15 @@ A modern, full-stack finance tracking application built with React and Node.js. 
 - **Financial Insights** - Get automated insights about your spending patterns
 - **Dark Mode** - Toggle between light and dark themes
 - **Profile Management** - Manage your user profile and account settings
+
+### Admin Features
+
+- **Admin Dashboard** - Comprehensive system overview and statistics
+- **User Management** - View, manage, and delete users
+- **Activity Logging** - Track all user activities and system events
+- **Reports & Analytics** - Generate detailed system reports
+- **Activity Filtering** - Filter activities by user, action, date range
+- **System Statistics** - View real-time system metrics and trends
 
 ## Tech Stack
 
@@ -55,6 +66,7 @@ finance-dashboard/
 │   └── package.json
 └── README.md
 ```
+
 ## Link: https://fin-track-eth.vercel.app
 
 ## License
