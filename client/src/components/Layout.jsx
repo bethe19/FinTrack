@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, List, Settings, Plus, Moon, Sun, Menu, X } from 'lucide-react';
+import { Home, TrendingUp, List, Settings, Plus, Moon, Sun, Menu, X, LogOut } from 'lucide-react';
 import DataInput from './DataInput';
+import { getUser } from '../utils/auth';
 
-const Layout = ({ children, darkMode, setDarkMode }) => {
+const Layout = ({ children, darkMode, setDarkMode, onLogout }) => {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        setUser(getUser());
+    }, []);
     const location = useLocation();
     const [showSMSInput, setShowSMSInput] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed on mobile
 
     const navigation = [
         { name: 'Overview', path: '/', icon: Home },
@@ -38,9 +44,19 @@ const Layout = ({ children, darkMode, setDarkMode }) => {
 
     return (
         <div className={`min-h-screen flex ${darkMode ? 'bg-black' : 'bg-white'} transition-colors duration-200`}>
+            {/* Mobile Overlay */}
+            {sidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
             <aside 
-                className={`fixed lg:relative z-40 h-screen ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'} border-r transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-72' : 'w-20 lg:w-24'}`}
+                className={`fixed lg:relative z-40 h-screen ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'} border-r transition-all duration-300 ease-in-out ${
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                } ${sidebarOpen ? 'w-72' : 'w-0 lg:w-20'} overflow-hidden lg:overflow-visible`}
             >
                 <div className="flex flex-col h-full p-4">
                     {/* Header */}
@@ -73,6 +89,12 @@ const Layout = ({ children, darkMode, setDarkMode }) => {
                                 <Link
                                     key={item.path}
                                     to={item.path}
+                                    onClick={() => {
+                                        // Close sidebar on mobile when navigating
+                                        if (window.innerWidth < 1024) {
+                                            setSidebarOpen(false);
+                                        }
+                                    }}
                                     className={`group flex items-center gap-3 px-4 py-3 border transition-all duration-200 ${
                                         active
                                             ? darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'
@@ -120,24 +142,56 @@ const Layout = ({ children, darkMode, setDarkMode }) => {
                             )}
                         </button>
 
-                        {sidebarOpen && (
-                            <div className={`flex items-center gap-3 px-2 py-1`}>
+                        {sidebarOpen && user && (
+                            <div className={`flex items-center gap-3 px-2 py-1 mb-3`}>
                                 <div className={`w-9 h-9 border flex items-center justify-center font-bold ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
-                                    B
+                                    {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                                 </div>
-                                <div className="overflow-hidden">
-                                    <p className={`font-bold text-sm truncate ${darkMode ? 'text-white' : 'text-black'}`}>Bethe</p>
-                                    <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>CBE Account</p>
+                                <div className="overflow-hidden flex-1">
+                                    <p className={`font-bold text-sm truncate ${darkMode ? 'text-white' : 'text-black'}`}>
+                                        {user.email || 'User'}
+                                    </p>
+                                    <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {user.email ? user.email.split('@')[0] : 'Account'}
+                                    </p>
                                 </div>
                             </div>
+                        )}
+
+                        {onLogout && (
+                            <button
+                                onClick={onLogout}
+                                className={`flex items-center gap-3 w-full p-2 border ${darkMode 
+                                    ? 'border-gray-800 hover:bg-gray-900 text-gray-400 hover:text-white' 
+                                    : 'border-gray-300 hover:bg-gray-100 text-gray-600 hover:text-black'
+                                } ${!sidebarOpen ? 'justify-center' : ''}`}
+                            >
+                                <LogOut className="w-5 h-5" />
+                                {sidebarOpen && (
+                                    <span className="font-medium text-sm">Logout</span>
+                                )}
+                            </button>
                         )}
                     </div>
                 </div>
             </aside>
 
+            {/* Mobile Menu Button - Only show when sidebar is closed */}
+            {!sidebarOpen && (
+                <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className={`fixed top-4 left-4 z-50 lg:hidden p-2 border ${darkMode 
+                        ? 'bg-black border-gray-800 text-white' 
+                        : 'bg-white border-gray-300 text-black'
+                    }`}
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
+            )}
+
             {/* Main Content Area */}
-            <main className={`flex-1 overflow-x-hidden overflow-y-auto h-screen scroll-smooth transition-all duration-300 ${sidebarOpen ? 'lg:ml-0' : 'lg:ml-0'}`}>
-                <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+            <main className={`flex-1 overflow-x-hidden overflow-y-auto h-screen scroll-smooth transition-all duration-300 w-full`}>
+                <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
                      {children}
                 </div>
             </main>

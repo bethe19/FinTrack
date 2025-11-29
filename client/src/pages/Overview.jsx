@@ -151,30 +151,30 @@ const Overview = ({ darkMode }) => {
     const userName = profile?.name || 'there';
 
     return (
-        <div className="p-8 max-w-7xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto">
             {/* Welcome Section */}
-            <div className={`mb-8 p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className={`text-4xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-2`}>
+            <div className={`mb-4 sm:mb-6 lg:mb-8 p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                        <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-1 sm:mb-2 truncate`}>
                             {getGreeting()}, {userName}!
                         </h1>
-                        <p className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <p className={`text-sm sm:text-base lg:text-lg ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             Here's your financial overview for today.
                         </p>
                     </div>
-                    <div className={`w-16 h-16 border flex items-center justify-center ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
-                        <Wallet className="w-8 h-8" />
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 border flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
+                        <Wallet className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8" />
                     </div>
                 </div>
             </div>
 
             {/* Header */}
-            <div className="mb-8 flex items-center justify-between">
-                <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-2`}>
+            <div className="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <h2 className={`text-xl sm:text-2xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                     Financial Overview
                 </h2>
-                <div className={`px-4 py-2 border text-sm ${darkMode ? 'border-gray-800 text-gray-400' : 'border-gray-300 text-gray-600'}`}>
+                <div className={`px-3 sm:px-4 py-1.5 sm:py-2 border text-xs sm:text-sm ${darkMode ? 'border-gray-800 text-gray-400' : 'border-gray-300 text-gray-600'}`}>
                     {getReportTypeLabel(reportType)}
                 </div>
             </div>
@@ -196,14 +196,14 @@ const Overview = ({ darkMode }) => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
                 {/* Visualizations */}
-                <div className="lg:col-span-2 space-y-8">
-                    <div className={`p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
-                         <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-6`}>
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
+                    <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                         <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-4 sm:mb-6`}>
                             Income Distribution
                         </h3>
-                        <div className="mt-4">
+                        <div className="mt-4 overflow-x-auto">
                              <DotVisualization
                                 value={data.stats.income.total}
                                 max={Math.max(data.stats.income.total, data.stats.expense.total, 1)}
@@ -211,17 +211,17 @@ const Overview = ({ darkMode }) => {
                                 cols={20}
                                 color="green"
                             />
-                             <p className={`mt-4 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                             <p className={`mt-3 sm:mt-4 text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 Represents total income relative to expenses.
                             </p>
                         </div>
                     </div>
 
-                     <div className={`p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
-                         <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-6`}>
+                     <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                         <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-4 sm:mb-6`}>
                             Expense Distribution
                         </h3>
-                        <div className="mt-4">
+                        <div className="mt-4 overflow-x-auto">
                              <DotVisualization
                                 value={data.stats.expense.total}
                                 max={Math.max(data.stats.income.total, data.stats.expense.total, 1)}
@@ -229,7 +229,7 @@ const Overview = ({ darkMode }) => {
                                 cols={20}
                                 color="coral"
                             />
-                             <p className={`mt-4 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                             <p className={`mt-3 sm:mt-4 text-xs sm:text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 Represents total expenses relative to income.
                             </p>
                         </div>
@@ -237,23 +237,23 @@ const Overview = ({ darkMode }) => {
                 </div>
 
                  {/* Quick Stats / Mini Breakdown */}
-                <div className={`p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'} h-fit`}>
-                    <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-6`}>
+                <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'} h-fit`}>
+                    <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-4 sm:mb-6`}>
                         Quick Stats
                     </h3>
                     
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 border flex items-center justify-center ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
-                                    <Activity className="w-5 h-5" />
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 border flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
+                                    <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
-                                <div>
-                                    <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Transactions</p>
+                                <div className="min-w-0">
+                                    <p className={`text-xs sm:text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Transactions</p>
                                     <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Count</p>
                                 </div>
                             </div>
-                            <span className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                            <span className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                                 {data.stats.transactionCount}
                             </span>
                         </div>
@@ -261,16 +261,16 @@ const Overview = ({ darkMode }) => {
                         <div className={`h-px ${darkMode ? 'bg-gray-800' : 'bg-gray-300'}`} />
 
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 border flex items-center justify-center ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
-                                    <TrendingUp className="w-5 h-5" />
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 border flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
+                                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
-                                <div>
-                                    <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Avg. Income</p>
+                                <div className="min-w-0">
+                                    <p className={`text-xs sm:text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Avg. Income</p>
                                     <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Per Transaction</p>
                                 </div>
                             </div>
-                            <span className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                            <span className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                                 {data.stats.income.count > 0 
                                     ? (data.stats.income.total / data.stats.income.count).toLocaleString(undefined, { maximumFractionDigits: 0 }) 
                                     : 0}
@@ -280,16 +280,16 @@ const Overview = ({ darkMode }) => {
                          <div className={`h-px ${darkMode ? 'bg-gray-800' : 'bg-gray-300'}`} />
 
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 border flex items-center justify-center ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
-                                    <TrendingDown className="w-5 h-5" />
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 border flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
+                                    <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </div>
-                                <div>
-                                    <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Avg. Expense</p>
+                                <div className="min-w-0">
+                                    <p className={`text-xs sm:text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Avg. Expense</p>
                                     <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Per Transaction</p>
                                 </div>
                             </div>
-                            <span className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                            <span className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                                 {data.stats.expense.count > 0
                                     ? (data.stats.expense.total / data.stats.expense.count).toLocaleString(undefined, { maximumFractionDigits: 0 })
                                     : 0}
@@ -300,8 +300,8 @@ const Overview = ({ darkMode }) => {
             </div>
 
             {/* Recent Transactions Table */}
-            <div className="mt-8">
-                 <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-6`}>
+            <div className="mt-4 sm:mt-6 lg:mt-8">
+                 <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'} mb-4 sm:mb-6`}>
                     Recent Activity
                 </h3>
                 <TransactionTable transactions={data.transactions.slice(0, 10)} darkMode={darkMode} />

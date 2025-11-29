@@ -68,17 +68,17 @@ const FinancialInsights = ({ transactions, darkMode }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Key Insights Cards */}
             {insights.insights.length > 0 && (
                 <div>
-                    <div className="flex items-center gap-2 mb-4">
-                        <Sparkles className={`w-5 h-5 ${darkMode ? 'text-white' : 'text-black'}`} />
-                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                        <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-white' : 'text-black'}`} />
+                        <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                             Key Insights
                         </h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         {insights.insights.map((insight, index) => {
                             const Icon = getIcon(insight.icon);
                             const styles = getTypeStyles(insight.type);
@@ -86,14 +86,14 @@ const FinancialInsights = ({ transactions, darkMode }) => {
                             return (
                                 <div
                                     key={index}
-                                    className={`p-4 border ${styles.bg} ${styles.text} transition-all hover:shadow-lg`}
+                                    className={`p-3 sm:p-4 border ${styles.bg} ${styles.text} transition-all hover:shadow-lg`}
                                 >
-                                    <div className="flex items-start gap-3">
-                                        <div className={`w-10 h-10 flex items-center justify-center ${styles.iconBg} flex-shrink-0`}>
-                                            <Icon className={`w-5 h-5 ${styles.iconColor}`} />
+                                    <div className="flex items-start gap-2 sm:gap-3">
+                                        <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center ${styles.iconBg} flex-shrink-0`}>
+                                            <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${styles.iconColor}`} />
                                         </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-sm mb-1">{insight.title}</h4>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold text-xs sm:text-sm mb-1">{insight.title}</h4>
                                             <p className="text-xs leading-relaxed">{insight.message}</p>
                                         </div>
                                     </div>
@@ -107,30 +107,30 @@ const FinancialInsights = ({ transactions, darkMode }) => {
             {/* Overspent Months */}
             {insights.overspentMonths.length > 0 && (
                 <div>
-                    <div className="flex items-center gap-2 mb-4">
-                        <AlertTriangle className={`w-5 h-5 ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
-                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                        <AlertTriangle className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                        <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                             Overspent Months
                         </h3>
                     </div>
-                    <div className={`p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                    <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
                         <div className="space-y-3">
                             {insights.overspentMonths.map((month, index) => (
                                 <div
                                     key={month.month}
-                                    className={`p-4 border ${
+                                    className={`p-3 sm:p-4 border ${
                                         darkMode ? 'bg-gray-900 border-gray-800' : 'bg-red-50 border-red-200'
                                     }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 flex items-center justify-center ${
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs sm:text-sm ${
                                                 darkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-600'
-                                            } font-bold`}>
+                                            } font-bold flex-shrink-0`}>
                                                 #{index + 1}
                                             </div>
-                                            <div>
-                                                <p className={`font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                            <div className="min-w-0">
+                                                <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                                                     {month.monthName}
                                                 </p>
                                                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -138,9 +138,9 @@ const FinancialInsights = ({ transactions, darkMode }) => {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className={`font-bold ${darkMode ? 'text-red-400' : 'text-red-600'} flex items-center gap-1`}>
-                                                <ArrowDownRight className="w-4 h-4" />
+                                        <div className="text-left sm:text-right w-full sm:w-auto">
+                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-red-400' : 'text-red-600'} flex items-center gap-1`}>
+                                                <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4" />
                                                 ETB {Math.abs(month.balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                             <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -148,22 +148,22 @@ const FinancialInsights = ({ transactions, darkMode }) => {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-3 gap-4`}>
+                                    <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-3 gap-2 sm:gap-4`}>
                                         <div>
                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Income</p>
-                                            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
                                                 ETB {month.income.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                         </div>
                                         <div>
                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expenses</p>
-                                            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
                                                 ETB {month.expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                         </div>
                                         <div>
                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Balance</p>
-                                            <p className={`text-sm font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
                                                 ETB {month.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                         </div>
@@ -178,36 +178,36 @@ const FinancialInsights = ({ transactions, darkMode }) => {
             {/* Best Months */}
             {insights.bestMonths.length > 0 && (
                 <div>
-                    <div className="flex items-center gap-2 mb-4">
-                        <Award className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
-                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                        <Award className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                        <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                             Best Performing Months
                         </h3>
                     </div>
-                    <div className={`p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                    <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
                         <div className="space-y-3">
                             {insights.bestMonths.map((month, index) => (
                                 <div
                                     key={month.month}
-                                    className={`p-4 border ${
+                                    className={`p-3 sm:p-4 border ${
                                         darkMode ? 'bg-gray-900 border-gray-800' : 'bg-green-50 border-green-200'
                                     }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 flex items-center justify-center ${
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 ${
                                                 index === 0 
                                                     ? darkMode ? 'bg-yellow-900/30 text-yellow-400 border-2 border-yellow-500' : 'bg-yellow-100 text-yellow-600 border-2 border-yellow-400'
                                                     : darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
                                             } font-bold`}>
                                                 {index === 0 ? (
-                                                    <Award className="w-5 h-5" />
+                                                    <Award className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 ) : (
                                                     `#${index + 1}`
                                                 )}
                                             </div>
-                                            <div>
-                                                <p className={`font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                            <div className="min-w-0">
+                                                <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                                                     {month.monthName}
                                                 </p>
                                                 <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -215,9 +215,9 @@ const FinancialInsights = ({ transactions, darkMode }) => {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className={`font-bold ${darkMode ? 'text-green-400' : 'text-green-600'} flex items-center gap-1`}>
-                                                <ArrowUpRight className="w-4 h-4" />
+                                        <div className="text-left sm:text-right w-full sm:w-auto">
+                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-green-400' : 'text-green-600'} flex items-center gap-1`}>
+                                                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4" />
                                                 ETB {month.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                             <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -225,22 +225,22 @@ const FinancialInsights = ({ transactions, darkMode }) => {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-3 gap-4`}>
+                                    <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-3 gap-2 sm:gap-4`}>
                                         <div>
                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Income</p>
-                                            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
                                                 ETB {month.income.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                         </div>
                                         <div>
                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expenses</p>
-                                            <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
                                                 ETB {month.expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                         </div>
                                         <div>
                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Balance</p>
-                                            <p className={`text-sm font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
                                                 ETB {month.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </p>
                                         </div>
@@ -255,32 +255,32 @@ const FinancialInsights = ({ transactions, darkMode }) => {
             {/* Spending Streaks */}
             {insights.spendingStreaks.length > 0 && (
                 <div>
-                    <div className="flex items-center gap-2 mb-4">
-                        <Activity className={`w-5 h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
-                        <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                        <Activity className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
+                        <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                             Spending Trends
                         </h3>
                     </div>
-                    <div className={`p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                    <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
                         <div className="space-y-3">
                             {insights.spendingStreaks.map((streak, index) => (
                                 <div
                                     key={index}
-                                    className={`p-4 border ${
+                                    className={`p-3 sm:p-4 border ${
                                         darkMode ? 'bg-gray-900 border-gray-800' : 'bg-orange-50 border-orange-200'
                                     }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className={`font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
                                                 Increasing Spending Pattern
                                             </p>
                                             <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                                 {streak.startMonth} → {streak.endMonth}
                                             </p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className={`font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                                        <div className="text-left sm:text-right">
+                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
                                                 +{streak.increase.toFixed(1)}%
                                             </p>
                                             <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>

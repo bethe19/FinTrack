@@ -1,43 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import ProfileSetup from './components/ProfileSetup';
+import Login from './components/Login';
 import Layout from './components/Layout';
 import Overview from './pages/Overview';
 import Analytics from './pages/Analytics';
 import Transactions from './pages/Transactions';
 import Settings from './pages/Settings';
-import { profileAPI, healthCheck } from './services/api';
+import { healthCheck } from './services/api';
+import { isAuthenticated, removeToken, removeUser } from './utils/auth';
 
 function App() {
-    const [hasProfile, setHasProfile] = useState(null);
+    const [authenticated, setAuthenticated] = useState(null);
     const [backendAvailable, setBackendAvailable] = useState(true);
     const [darkMode, setDarkMode] = useState(false);
 
     useEffect(() => {
-        checkBackendAndProfile();
+        checkBackendAndAuth();
     }, []);
 
-    const checkBackendAndProfile = async () => {
+    const checkBackendAndAuth = async () => {
         const isAvailable = await healthCheck();
         setBackendAvailable(isAvailable);
 
         if (!isAvailable) {
             console.error('Backend is not available');
-            setHasProfile(false);
+            setAuthenticated(false);
             return;
         }
 
-        try {
-            const profile = await profileAPI.get();
-            setHasProfile(!!profile);
-        } catch (error) {
-            console.error('Error checking profile:', error);
-            setHasProfile(false);
-        }
+        // Check if user is authenticated (has valid token)
+        const authenticated = isAuthenticated();
+        setAuthenticated(authenticated);
     };
 
-    const handleProfileComplete = () => {
-        setHasProfile(true);
+    const handleLogin = () => {
+        setAuthenticated(true);
+    };
+
+    const handleLogout = () => {
+        removeToken();
+        removeUser();
+        setAuthenticated(false);
     };
 
     if (!backendAvailable) {
@@ -64,24 +67,24 @@ function App() {
         );
     }
 
-    if (hasProfile === null) {
+    if (authenticated === null) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-black' : 'bg-white'}`}>
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-coral-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600">Loading...</p>
+                    <div className={`w-12 h-12 border-4 ${darkMode ? 'border-white border-t-transparent' : 'border-black border-t-transparent'} animate-spin mx-auto mb-4`} />
+                    <p className={darkMode ? 'text-white' : 'text-black'}>Loading...</p>
                 </div>
             </div>
         );
     }
 
-    if (!hasProfile) {
-        return <ProfileSetup onComplete={handleProfileComplete} darkMode={darkMode} />;
+    if (!authenticated) {
+        return <Login onLogin={handleLogin} darkMode={darkMode} />;
     }
 
     return (
         <Router>
-            <Layout darkMode={darkMode} setDarkMode={setDarkMode}>
+            <Layout darkMode={darkMode} setDarkMode={setDarkMode} onLogout={handleLogout}>
                 <Routes>
                     <Route path="/" element={<Overview darkMode={darkMode} />} />
                     <Route path="/analytics" element={<Analytics darkMode={darkMode} />} />
