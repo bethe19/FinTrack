@@ -11,6 +11,7 @@ const { parseCSVContent } = require('../csvParser');
  * Process SMS and create transactions
  */
 const processSMSHandler = (req, res) => {
+    const userId = req.userId; // From auth middleware
     const smsText = typeof req.body === 'string' ? req.body : req.body.sms;
     
     if (!smsText) {
@@ -26,7 +27,7 @@ const processSMSHandler = (req, res) => {
         });
     }
 
-    createMultipleTransactions(transactions, (err, result) => {
+    createMultipleTransactions(userId, transactions, (err, result) => {
         if (err) {
             console.error('Error inserting transactions:', err);
             return res.status(500).json({ error: 'Failed to save transactions', details: err });
@@ -44,6 +45,8 @@ const processSMSHandler = (req, res) => {
  * Process CSV upload and create transactions
  */
 const uploadCSVHandler = (req, res) => {
+    const userId = req.userId; // From auth middleware
+    
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -58,7 +61,7 @@ const uploadCSVHandler = (req, res) => {
             });
         }
 
-        createMultipleTransactions(transactions, (err, result) => {
+        createMultipleTransactions(userId, transactions, (err, result) => {
             if (err) {
                 console.error('Error inserting transactions:', err);
                 return res.status(500).json({ error: 'Failed to save transactions', details: err });
@@ -80,7 +83,9 @@ const uploadCSVHandler = (req, res) => {
  * Get all transactions
  */
 const getAllTransactionsHandler = (req, res) => {
-    getAllTransactions((err, transactions) => {
+    const userId = req.userId; // From auth middleware
+    
+    getAllTransactions(userId, (err, transactions) => {
         if (err) {
             console.error('Error fetching transactions:', err);
             return res.status(500).json({ error: 'Failed to fetch transactions' });
@@ -93,9 +98,10 @@ const getAllTransactionsHandler = (req, res) => {
  * Delete a single transaction
  */
 const deleteTransactionHandler = (req, res) => {
+    const userId = req.userId; // From auth middleware
     const { id } = req.params;
     
-    deleteTransaction(id, (err) => {
+    deleteTransaction(userId, id, (err) => {
         if (err) {
             console.error('Error deleting transaction:', err);
             return res.status(500).json({ error: 'Failed to delete transaction' });
@@ -108,7 +114,9 @@ const deleteTransactionHandler = (req, res) => {
  * Delete all transactions
  */
 const deleteAllTransactionsHandler = (req, res) => {
-    deleteAllTransactions((err) => {
+    const userId = req.userId; // From auth middleware
+    
+    deleteAllTransactions(userId, (err) => {
         if (err) {
             console.error('Error deleting all transactions:', err);
             return res.status(500).json({ error: 'Failed to delete transactions' });

@@ -4,13 +4,14 @@ const { createOrUpdateProfile, getProfile } = require('../database');
  * Create or update user profile
  */
 const createOrUpdateProfileHandler = (req, res) => {
+    const userId = req.userId; // From auth middleware
     const { name, phone_number, account_number } = req.body;
     
     if (!name) {
         return res.status(400).json({ error: 'Name is required' });
     }
     
-    createOrUpdateProfile({ name, phone_number, account_number }, (err) => {
+    createOrUpdateProfile(userId, { name, phone_number, account_number }, (err) => {
         if (err) {
             console.error('Error creating/updating profile:', err);
             return res.status(500).json({ error: 'Failed to save profile' });
@@ -23,7 +24,9 @@ const createOrUpdateProfileHandler = (req, res) => {
  * Get user profile
  */
 const getProfileHandler = (req, res) => {
-    getProfile((err, profile) => {
+    const userId = req.userId; // From auth middleware
+    
+    getProfile(userId, (err, profile) => {
         if (err) {
             console.error('Error fetching profile:', err);
             return res.status(500).json({ error: 'Failed to fetch profile' });

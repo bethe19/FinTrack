@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const { authenticate } = require('../middleware/auth');
+const authRoutes = require('./authRoutes');
 const profileRoutes = require('./profileRoutes');
 const transactionRoutes = require('./transactionRoutes');
 const analyticsRoutes = require('./analyticsRoutes');
@@ -17,20 +19,19 @@ const upload = multer({
     limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 }
 });
 
-// Mount route modules (matching original API paths)
+// Public routes (no authentication required)
 router.use('/health', healthRoutes);
-router.use('/profile', profileRoutes);
-router.use('/transactions', transactionRoutes);
-router.use('/analytics', analyticsRoutes);
+router.use('/auth', authRoutes);
 
-// SMS endpoint (separate from transactions route)
-router.post('/sms', processSMSHandler);
+// Protected routes (authentication required)
+router.use('/profile', authenticate, profileRoutes);
+router.use('/transactions', authenticate, transactionRoutes);
+router.use('/analytics', authenticate, analyticsRoutes);
 
-// CSV upload endpoint (separate from transactions route)
-router.post('/upload-csv', upload.single('file'), uploadCSVHandler);
-
-// Stats endpoint (separate from analytics route)
-router.get('/stats', getStatsHandler);
+// Protected endpoints (authentication required)
+router.post('/sms', authenticate, processSMSHandler);
+router.post('/upload-csv', authenticate, upload.single('file'), uploadCSVHandler);
+router.get('/stats', authenticate, getStatsHandler);
 
 module.exports = router;
 

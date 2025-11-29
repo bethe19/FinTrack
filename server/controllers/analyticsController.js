@@ -4,7 +4,9 @@ const { getAllTransactions, getTransactionStats } = require('../database');
  * Get analytics data (income, expenses, monthly breakdown)
  */
 const getAnalyticsHandler = (req, res) => {
-    getAllTransactions((err, transactions) => {
+    const userId = req.userId; // From auth middleware
+    
+    getAllTransactions(userId, (err, transactions) => {
         if (err) {
             return res.status(500).json({ error: 'Failed to fetch analytics' });
         }
@@ -49,7 +51,9 @@ const getAnalyticsHandler = (req, res) => {
  * Get transaction statistics
  */
 const getStatsHandler = (req, res) => {
-    getTransactionStats((err, stats) => {
+    const userId = req.userId; // From auth middleware
+    
+    getTransactionStats(userId, (err, stats) => {
         if (err) {
             console.error('Error fetching stats:', err);
             return res.status(500).json({ error: 'Failed to fetch statistics' });
