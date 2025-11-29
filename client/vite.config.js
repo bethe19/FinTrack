@@ -7,9 +7,9 @@ export default defineConfig({
     server: {
         proxy: {
             '/api': {
-                target: 'http://localhost:5000',
+                target: process.env.VITE_API_PROXY_TARGET || 'https://finttrack-api.onrender.com',
                 changeOrigin: true,
-                secure: false,
+                secure: true,
             }
         }
     }

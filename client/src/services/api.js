@@ -1,4 +1,5 @@
-const API_BASE_URL = '/api';
+// Use environment variable or fallback to local proxy for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Profile API
 export const profileAPI = {
