@@ -1,0 +1,97 @@
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ProfileSetup from './components/ProfileSetup';
+import Layout from './components/Layout';
+import Overview from './pages/Overview';
+import Analytics from './pages/Analytics';
+import Transactions from './pages/Transactions';
+import Settings from './pages/Settings';
+import { profileAPI, healthCheck } from './services/api';
+
+function App() {
+    const [hasProfile, setHasProfile] = useState(null);
+    const [backendAvailable, setBackendAvailable] = useState(true);
+    const [darkMode, setDarkMode] = useState(false);
+
+    useEffect(() => {
+        checkBackendAndProfile();
+    }, []);
+
+    const checkBackendAndProfile = async () => {
+        const isAvailable = await healthCheck();
+        setBackendAvailable(isAvailable);
+
+        if (!isAvailable) {
+            console.error('Backend is not available');
+            setHasProfile(false);
+            return;
+        }
+
+        try {
+            const profile = await profileAPI.get();
+            setHasProfile(!!profile);
+        } catch (error) {
+            console.error('Error checking profile:', error);
+            setHasProfile(false);
+        }
+    };
+
+    const handleProfileComplete = () => {
+        setHasProfile(true);
+    };
+
+    if (!backendAvailable) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center max-w-md p-8 bg-white rounded-3xl shadow-xl">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Backend Not Running</h2>
+                    <p className="text-gray-600 mb-6">
+                        Please start the backend server to use the finance dashboard.
+                    </p>
+                    <div className="bg-gray-50 p-4 rounded-xl text-left">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">To start the backend:</p>
+                        <code className="text-xs text-gray-600 block">
+                            cd server && npm run dev
+                        </code>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (hasProfile === null) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-coral-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!hasProfile) {
+        return <ProfileSetup onComplete={handleProfileComplete} darkMode={darkMode} />;
+    }
+
+    return (
+        <Router>
+            <Layout darkMode={darkMode} setDarkMode={setDarkMode}>
+                <Routes>
+                    <Route path="/" element={<Overview darkMode={darkMode} />} />
+                    <Route path="/analytics" element={<Analytics darkMode={darkMode} />} />
+                    <Route path="/transactions" element={<Transactions darkMode={darkMode} />} />
+                    <Route path="/settings" element={<Settings darkMode={darkMode} />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Layout>
+        </Router>
+    );
+}
+
+export default App;
