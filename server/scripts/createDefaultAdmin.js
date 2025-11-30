@@ -9,7 +9,7 @@
  */
 
 require('dotenv').config();
-const { createUser, getUserByEmail, db } = require('../database');
+const { createUser, getUserByEmail, updateUserRole } = require('../database');
 const { hashPassword } = require('../utils/auth');
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.argv[2];
@@ -40,50 +40,22 @@ setTimeout(() => {
 
         if (existingUser) {
             console.log('User already exists. Updating role to admin...');
-            // First check if role column exists
-            db.all('PRAGMA table_info(users)', (err, rows) => {
-                if (err) {
-                    console.error('Error checking users table:', err);
+            
+            // Check current role
+            if (existingUser.role === 'admin') {
+                console.log(`✅ Admin user already exists with admin role!`);
+                console.log(`   Email: ${ADMIN_EMAIL}`);
+                process.exit(0);
+            }
+            
+            // Update role to admin
+            updateUserRole(existingUser.id, 'admin', (updateErr) => {
+                if (updateErr) {
+                    console.error('Error updating user role:', updateErr);
                     process.exit(1);
                 }
-                
-                const hasRole = rows && rows.some(col => col.name === 'role');
-                
-                if (hasRole) {
-                    // Check current role
-                    if (existingUser.role === 'admin') {
-                        console.log(`✅ Admin user already exists with admin role!`);
-                        console.log(`   Email: ${ADMIN_EMAIL}`);
-                        process.exit(0);
-                    }
-                    
-                    // Update role directly
-                    db.run('UPDATE users SET role = ? WHERE email = ?', ['admin', ADMIN_EMAIL], (err) => {
-                        if (err) {
-                            console.error('Error updating user role:', err);
-                            process.exit(1);
-                        }
-                        console.log(`✅ User ${ADMIN_EMAIL} is now an admin!`);
-                        process.exit(0);
-                    });
-                } else {
-                    // Add role column first, then update
-                    db.run("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'", (alterErr) => {
-                        if (alterErr && !alterErr.message.includes('duplicate column')) {
-                            console.error('Error adding role column:', alterErr);
-                            process.exit(1);
-                        }
-                        // Now update the role
-                        db.run('UPDATE users SET role = ? WHERE email = ?', ['admin', ADMIN_EMAIL], (updateErr) => {
-                            if (updateErr) {
-                                console.error('Error updating user role:', updateErr);
-                                process.exit(1);
-                            }
-                            console.log(`✅ User ${ADMIN_EMAIL} is now an admin!`);
-                            process.exit(0);
-                        });
-                    });
-                }
+                console.log(`✅ User ${ADMIN_EMAIL} is now an admin!`);
+                process.exit(0);
             });
             return;
         }

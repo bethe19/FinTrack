@@ -1,292 +1,244 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { MongoClient, ObjectId } = require('mongodb');
 
-const dbPath = process.env.DB_PATH 
-    ? (path.isAbsolute(process.env.DB_PATH) ? process.env.DB_PATH : path.join(__dirname, process.env.DB_PATH))
-    : path.join(__dirname, 'finance.db');
-const db = new sqlite3.Database(dbPath);
+// MongoDB connection URL from environment variable
+const DATABASE_URL = process.env.DATABASE || 'mongodb+srv://bethebayou:DtIBXlaiOWG8sX26@cluster0.z28u54q.mongodb.net/FinTrack?retryWrites=true&w=majority&appName=Cluster0';
+const DATABASE_NAME = 'FinTrack';
 
-// Initialize database tables
-db.serialize(() => {
-    // Users table
-    db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+let client = null;
+let db = null;
 
-    // Profiles table (updated to include user_id)
-    db.run(`
-    CREATE TABLE IF NOT EXISTS profiles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      name TEXT NOT NULL,
-      phone_number TEXT,
-      account_number TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-      UNIQUE(user_id)
-    )
-  `);
+// Collections
+let usersCollection = null;
+let profilesCollection = null;
+let transactionsCollection = null;
+let activitiesCollection = null;
 
-    // Transactions table (updated to include user_id)
-    db.run(`
-    CREATE TABLE IF NOT EXISTS transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      type TEXT NOT NULL,
-      amount REAL NOT NULL,
-      balance REAL,
-      from_person TEXT,
-      description TEXT NOT NULL,
-      transaction_date TEXT,
-      transaction_time TEXT,
-      ref_no TEXT,
-      sms_content TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
-    // Migrate existing data: Add user_id columns if they don't exist
-    // Check if user_id column exists in profiles table and add if missing
-    db.all(`PRAGMA table_info(profiles)`, (err, rows) => {
-        if (err) {
-            console.error('Error checking profiles columns:', err);
-            return;
+// Initialize MongoDB connection
+const connectDB = async () => {
+    try {
+        if (!client) {
+            client = new MongoClient(DATABASE_URL);
+            await client.connect();
+            console.log('✅ Connected to MongoDB');
         }
         
-        // Check if table exists and has columns
-        if (rows && rows.length > 0) {
-            const hasUserId = rows.some(col => col.name === 'user_id');
-            if (!hasUserId) {
-                // Migration: Add user_id column to profiles (nullable for existing data)
-                // Note: We add it as nullable first to handle existing rows
-                db.run(`ALTER TABLE profiles ADD COLUMN user_id INTEGER`, (err) => {
-                    if (err) {
-                        // If error, table might not exist yet or column already exists
-                        if (!err.message.includes('duplicate column')) {
-                            console.error('Migration error (profiles.user_id):', err);
-                        }
-                    } else {
-                        console.log('Migration: Added user_id column to profiles table');
-                    }
-                });
-            }
-        } else {
-            // Table doesn't exist yet, will be created with user_id above
-        }
-    });
-
-    // Check if user_id column exists in transactions table and add if missing
-    db.all(`PRAGMA table_info(transactions)`, (err, rows) => {
-        if (err) {
-            console.error('Error checking transactions columns:', err);
-            return;
-        }
-        
-        // Check if table exists and has columns
-        if (rows && rows.length > 0) {
-            const hasUserId = rows.some(col => col.name === 'user_id');
-            if (!hasUserId) {
-                // Migration: Add user_id column to transactions (nullable for existing data)
-                // Note: We add it as nullable first to handle existing rows
-                db.run(`ALTER TABLE transactions ADD COLUMN user_id INTEGER`, (err) => {
-                    if (err) {
-                        // If error, table might not exist yet or column already exists
-                        if (!err.message.includes('duplicate column')) {
-                            console.error('Migration error (transactions.user_id):', err);
-                        }
-                    } else {
-                        console.log('Migration: Added user_id column to transactions table');
-                    }
-                });
-            }
-        } else {
-            // Table doesn't exist yet, will be created with user_id above
-        }
-    });
-
-    // Activities table for tracking user activities
-    db.run(`
-    CREATE TABLE IF NOT EXISTS activities (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
-      action TEXT NOT NULL,
-      entity_type TEXT,
-      entity_id INTEGER,
-      details TEXT,
-      ip_address TEXT,
-      user_agent TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-    )
-  `);
-
-    // Migrate existing users: Add role column if it doesn't exist
-    db.all(`PRAGMA table_info(users)`, (err, rows) => {
-        if (err) {
-            console.error('Error checking users columns:', err);
-            return;
-        }
-        
-        if (rows && rows.length > 0) {
-            const hasRole = rows.some(col => col.name === 'role');
-            if (!hasRole) {
-                db.run(`ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'`, (err) => {
-                    if (err) {
-                        console.error('Migration error (users.role):', err);
-                    } else {
-                        console.log('Migration: Added role column to users table');
-                    }
-                });
-            }
-        }
-    });
-
-    // Create indexes for better performance (with error handling for columns that might not exist yet)
-    // These will be created after tables are set up, and IF NOT EXISTS will prevent duplicates
-    db.run(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-    
-    // Create indexes that depend on migrations - these will fail gracefully if columns don't exist yet
-    // They'll be created properly once migrations complete
-    db.run(`CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)`, (err) => {
-        if (err && !err.message.includes('no such column')) {
-            // Index creation will retry after role column is added
-        }
-    });
-
-    console.log('Database initialized successfully');
-    
-    // Function to create default admin user
-    const createDefaultAdmin = async () => {
-        const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-        
-        // Skip admin creation if credentials are not provided
-        if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-            console.log('ℹ️  Admin credentials not provided. Skipping default admin user creation.');
-            console.log('   Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables to auto-create admin user.');
-            return;
-        }
-        
-        const { hashPassword } = require('./utils/auth');
-        
-        getUserByEmail(ADMIN_EMAIL, async (err, existingUser) => {
-            if (err) {
-                console.error('Error checking for default admin user:', err);
-                return;
-            }
+        if (!db) {
+            db = client.db(DATABASE_NAME);
             
-            if (existingUser) {
-                // Check if user is already admin
-                if (existingUser.role === 'admin') {
-                    console.log('✅ Default admin user already exists');
-                    return;
-                }
-                
-                // Update existing user to admin
-                db.run('UPDATE users SET role = ? WHERE email = ?', ['admin', ADMIN_EMAIL], (err) => {
-                    if (err) {
-                        console.error('Error updating user to admin:', err);
-                    } else {
-                        console.log('✅ Default admin user role updated');
-                    }
-                });
-                return;
-            }
+            // Get collections
+            usersCollection = db.collection('users');
+            profilesCollection = db.collection('profiles');
+            transactionsCollection = db.collection('transactions');
+            activitiesCollection = db.collection('activities');
             
-            // Create new admin user
-            try {
-                const passwordHash = await hashPassword(ADMIN_PASSWORD);
-                createUser(ADMIN_EMAIL, passwordHash, 'admin', (err, user) => {
-                    if (err) {
-                        console.error('Error creating default admin user:', err);
-                    } else {
-                        console.log('✅ Default admin user created successfully');
-                        console.log(`   Email: ${ADMIN_EMAIL}`);
-                    }
-                });
-            } catch (error) {
-                console.error('Error hashing password for default admin:', error);
-            }
+            // Create indexes
+            await createIndexes();
+            
+            console.log('Database initialized successfully');
+        }
+        
+        return db;
+    } catch (error) {
+        console.error('MongoDB connection error:', error);
+        throw error;
+    }
+};
+
+// Create indexes for better performance
+const createIndexes = async () => {
+    try {
+        // Users indexes
+        await usersCollection.createIndex({ email: 1 }, { unique: true });
+        await usersCollection.createIndex({ role: 1 });
+        
+        // Profiles indexes
+        await profilesCollection.createIndex({ user_id: 1 }, { unique: true });
+        
+        // Transactions indexes
+        await transactionsCollection.createIndex({ user_id: 1 });
+        await transactionsCollection.createIndex({ created_at: -1 });
+        
+        // Activities indexes
+        await activitiesCollection.createIndex({ user_id: 1 });
+        await activitiesCollection.createIndex({ created_at: -1 });
+        
+        console.log('✅ Database indexes created');
+    } catch (error) {
+        console.error('Error creating indexes:', error);
+    }
+};
+
+// Helper function to convert callback to async/await pattern
+const callbackWrapper = (asyncFn, callback) => {
+    asyncFn().then(result => {
+        callback(null, result);
+    }).catch(err => {
+        callback(err, null);
         });
     };
     
-    // Create remaining indexes after a short delay to allow migrations to complete
-    setTimeout(() => {
-        db.run(`CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)`, (err) => {
-            if (err && !err.message.includes('no such column')) {
-                console.error('Note: transactions.user_id index will be created after migration');
-            }
-        });
-        db.run(`CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id)`, (err) => {
-            if (err && !err.message.includes('no such column')) {
-                console.error('Note: profiles.user_id index will be created after migration');
-            }
-        });
-        db.run(`CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(user_id)`);
-        db.run(`CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at)`);
-        
-        // Auto-create default admin user
+// Initialize connection on module load
+connectDB().then(() => {
+    // Create default admin user if credentials are provided
         createDefaultAdmin();
-    }, 1000);
+}).catch(err => {
+    console.error('Failed to initialize database:', err);
 });
 
 // User operations
 const createUser = (email, passwordHash, role, callback) => {
     const userRole = role || 'user';
-    db.run(
-        'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
-        [email, passwordHash, userRole],
-        function(err) {
-            if (err) return callback(err);
-            callback(null, { id: this.lastID, email, role: userRole });
-        }
-    );
+    const user = {
+        email,
+        password_hash: passwordHash,
+        role: userRole,
+        created_at: new Date()
+    };
+    
+    callbackWrapper(async () => {
+        await connectDB();
+        const result = await usersCollection.insertOne(user);
+        return {
+            id: result.insertedId.toString(),
+            email,
+            role: userRole
+        };
+    }, callback);
 };
 
 const getUserByEmail = (email, callback) => {
-    db.get('SELECT * FROM users WHERE email = ?', [email], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        const user = await usersCollection.findOne({ email });
+        if (user) {
+            return {
+                id: user._id.toString(),
+                email: user.email,
+                password_hash: user.password_hash,
+                role: user.role || 'user',
+                created_at: user.created_at
+            };
+        }
+        return null;
+    }, callback);
 };
 
 const getUserById = (id, callback) => {
-    db.get('SELECT id, email, created_at FROM users WHERE id = ?', [id], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const user = await usersCollection.findOne({ _id: new ObjectId(id) });
+            if (user) {
+                return {
+                    id: user._id.toString(),
+                    email: user.email,
+                    created_at: user.created_at
+                };
+            }
+            return null;
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                return null;
+            }
+            throw error;
+        }
+    }, callback);
 };
 
-// Profile operations (updated to include user_id)
+// Helper function to get user role by ID (for admin middleware)
+const getUserRoleById = (id, callback) => {
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const user = await usersCollection.findOne(
+                { _id: new ObjectId(id) },
+                { projection: { role: 1 } }
+            );
+            if (user) {
+                return {
+                    role: user.role || 'user'
+                };
+            }
+            return null;
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                return null;
+            }
+            throw error;
+        }
+    }, callback);
+};
+
+// Profile operations
 const createOrUpdateProfile = (userId, profileData, callback) => {
     const { name, phone_number, account_number } = profileData;
 
-    db.get('SELECT id FROM profiles WHERE user_id = ?', [userId], (err, row) => {
-        if (err) return callback(err);
-
-        if (row) {
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const userIdObj = new ObjectId(userId);
+            const profile = {
+                user_id: userIdObj,
+                name,
+                phone_number: phone_number || null,
+                account_number: account_number || null,
+                created_at: new Date()
+            };
+            
+            const existingProfile = await profilesCollection.findOne({ user_id: userIdObj });
+            
+            if (existingProfile) {
             // Update existing profile
-            db.run(
-                'UPDATE profiles SET name = ?, phone_number = ?, account_number = ? WHERE user_id = ?',
-                [name, phone_number, account_number, userId],
-                callback
+                await profilesCollection.updateOne(
+                    { user_id: userIdObj },
+                    {
+                        $set: {
+                            name,
+                            phone_number: phone_number || null,
+                            account_number: account_number || null
+                        }
+                    }
             );
         } else {
             // Create new profile
-            db.run(
-                'INSERT INTO profiles (user_id, name, phone_number, account_number) VALUES (?, ?, ?, ?)',
-                [userId, name, phone_number, account_number],
-                callback
-            );
+                await profilesCollection.insertOne(profile);
+            }
+            return {};
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                throw new Error('Invalid user ID');
+            }
+            throw error;
         }
-    });
+    }, callback);
 };
 
 const getProfile = (userId, callback) => {
-    db.get('SELECT * FROM profiles WHERE user_id = ?', [userId], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const profile = await profilesCollection.findOne({ user_id: new ObjectId(userId) });
+            if (profile) {
+                return {
+                    id: profile._id.toString(),
+                    user_id: profile.user_id.toString(),
+                    name: profile.name,
+                    phone_number: profile.phone_number,
+                    account_number: profile.account_number,
+                    created_at: profile.created_at
+                };
+            }
+            return null;
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                return null;
+            }
+            throw error;
+        }
+    }, callback);
 };
 
-// Transaction operations (updated to include user_id)
+// Transaction operations
 const createTransaction = (userId, transaction, callback) => {
     const {
         type,
@@ -300,227 +252,594 @@ const createTransaction = (userId, transaction, callback) => {
         sms_content
     } = transaction;
 
-    db.run(
-        `INSERT INTO transactions 
-    (user_id, type, amount, balance, from_person, description, transaction_date, transaction_time, ref_no, sms_content) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [userId, type, amount, balance, from_person, description, transaction_date, transaction_time, ref_no, sms_content],
-        callback
-    );
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const transactionDoc = {
+                user_id: new ObjectId(userId),
+                type,
+                amount: parseFloat(amount),
+                balance: balance ? parseFloat(balance) : null,
+                from_person: from_person || null,
+                description,
+                transaction_date: transaction_date || null,
+                transaction_time: transaction_time || null,
+                ref_no: ref_no || null,
+                sms_content: sms_content || null,
+                created_at: new Date()
+            };
+            
+            const result = await transactionsCollection.insertOne(transactionDoc);
+            return { insertedId: result.insertedId.toString() };
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                throw new Error('Invalid user ID');
+            }
+            throw error;
+        }
+    }, callback);
 };
 
 const createMultipleTransactions = (userId, transactions, callback) => {
-    const stmt = db.prepare(`
-    INSERT INTO transactions 
-    (user_id, type, amount, balance, from_person, description, transaction_date, transaction_time, ref_no, sms_content) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-    let errors = [];
-    
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-        
-        transactions.forEach((transaction, index) => {
-            const {
-                type, amount, balance, from_person, description,
-                transaction_date, transaction_time, ref_no, sms_content
-            } = transaction;
-
-            stmt.run(
-                [userId, type, amount, balance, from_person, description, transaction_date, transaction_time, ref_no, sms_content],
-                (err) => {
-                    if (err) {
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const userIdObj = new ObjectId(userId);
+            const errors = [];
+            
+            const transactionDocs = transactions.map((transaction, index) => {
+                try {
+                    return {
+                        user_id: userIdObj,
+                        type: transaction.type,
+                        amount: parseFloat(transaction.amount),
+                        balance: transaction.balance ? parseFloat(transaction.balance) : null,
+                        from_person: transaction.from_person || null,
+                        description: transaction.description,
+                        transaction_date: transaction.transaction_date || null,
+                        transaction_time: transaction.transaction_time || null,
+                        ref_no: transaction.ref_no || null,
+                        sms_content: transaction.sms_content || null,
+                        created_at: new Date()
+                    };
+                } catch (err) {
                         errors.push({ index, error: err.message });
-                        console.error(`Error inserting transaction at index ${index}:`, err.message);
-                    }
+                    return null;
                 }
-            );
-        });
-
-        stmt.finalize();
-        
-        db.run("COMMIT", (err) => {
-            if (err) {
-                console.error("Transaction commit failed:", err);
-                callback(err, null);
-            } else {
-                callback(errors.length > 0 ? errors : null, { inserted: transactions.length - errors.length });
+            }).filter(doc => doc !== null);
+            
+            if (transactionDocs.length === 0) {
+                return errors.length > 0 ? errors : { inserted: 0 };
             }
-        });
-    });
+            
+            const result = await transactionsCollection.insertMany(transactionDocs, { ordered: false });
+            
+            return errors.length > 0 ? errors : { inserted: result.insertedCount };
+        } catch (error) {
+            if (error.message && error.writeErrors) {
+                // Handle bulk write errors
+                const writeErrors = error.writeErrors || [];
+                return writeErrors.map((err, idx) => ({
+                    index: err.index,
+                    error: err.errmsg
+                }));
+            }
+            if (error.message.includes('invalid ObjectId')) {
+                throw new Error('Invalid user ID');
+            }
+            throw error;
+        }
+    }, callback);
 };
 
 const getAllTransactions = (userId, callback) => {
-    db.all('SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC', [userId], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const transactions = await transactionsCollection
+                .find({ user_id: new ObjectId(userId) })
+                .sort({ created_at: -1 })
+                .toArray();
+            
+            return transactions.map(t => ({
+                id: t._id.toString(),
+                user_id: t.user_id.toString(),
+                type: t.type,
+                amount: t.amount,
+                balance: t.balance,
+                from_person: t.from_person,
+                description: t.description,
+                transaction_date: t.transaction_date,
+                transaction_time: t.transaction_time,
+                ref_no: t.ref_no,
+                sms_content: t.sms_content,
+                created_at: t.created_at
+            }));
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                return [];
+            }
+            throw error;
+        }
+    }, callback);
 };
 
 const getAllTransactionsAdmin = (callback) => {
-    // Check if user_id column exists first
-    db.all(`PRAGMA table_info(transactions)`, (err, rows) => {
-        if (err) {
-            return callback(err);
-        }
+    callbackWrapper(async () => {
+        await connectDB();
+        const transactions = await transactionsCollection
+            .aggregate([
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'user_id',
+                        foreignField: '_id',
+                        as: 'user'
+                    }
+                },
+                {
+                    $unwind: {
+                        path: '$user',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $sort: { created_at: -1 }
+                },
+                {
+                    $project: {
+                        id: { $toString: '$_id' },
+                        user_id: { $toString: '$user_id' },
+                        user_email: '$user.email',
+                        type: 1,
+                        amount: 1,
+                        balance: 1,
+                        from_person: 1,
+                        description: 1,
+                        transaction_date: 1,
+                        transaction_time: 1,
+                        ref_no: 1,
+                        sms_content: 1,
+                        created_at: 1
+                    }
+                }
+            ])
+            .toArray();
         
-        const hasUserId = rows && rows.some(col => col.name === 'user_id');
-        
-        if (hasUserId) {
-            db.all(`
-                SELECT t.*, u.email as user_email 
-                FROM transactions t 
-                LEFT JOIN users u ON t.user_id = u.id 
-                ORDER BY t.created_at DESC
-            `, callback);
-        } else {
-            // Fallback: query without user_id join
-            db.all(`
-                SELECT t.*, NULL as user_email 
-                FROM transactions t 
-                ORDER BY t.created_at DESC
-            `, callback);
-        }
-    });
+        return transactions.map(t => ({
+            ...t,
+            _id: undefined // Remove MongoDB _id from projection
+        }));
+    }, callback);
 };
 
 const getTransactionStats = (userId, callback) => {
-    db.all(`
-    SELECT 
-      type,
-      COUNT(*) as count,
-      SUM(amount) as total,
-      AVG(amount) as average
-    FROM transactions
-    WHERE user_id = ?
-    GROUP BY type
-  `, [userId], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const stats = await transactionsCollection
+                .aggregate([
+                    {
+                        $match: { user_id: new ObjectId(userId) }
+                    },
+                    {
+                        $group: {
+                            _id: '$type',
+                            count: { $sum: 1 },
+                            total: { $sum: '$amount' },
+                            average: { $avg: '$amount' }
+                        }
+                    }
+                ])
+                .toArray();
+            
+            return stats.map(stat => ({
+                type: stat._id,
+                count: stat.count,
+                total: stat.total || 0,
+                average: stat.average || 0
+            }));
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                return [];
+            }
+            throw error;
+        }
+    }, callback);
 };
 
 const deleteTransaction = (userId, id, callback) => {
-    db.run('DELETE FROM transactions WHERE id = ? AND user_id = ?', [id, userId], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const result = await transactionsCollection.deleteOne({
+                _id: new ObjectId(id),
+                user_id: new ObjectId(userId)
+            });
+            return { deletedCount: result.deletedCount };
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                return { deletedCount: 0 };
+            }
+            throw error;
+        }
+    }, callback);
 };
 
 const deleteAllTransactions = (userId, callback) => {
-    db.run('DELETE FROM transactions WHERE user_id = ?', [userId], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const result = await transactionsCollection.deleteMany({
+                user_id: new ObjectId(userId)
+            });
+            return { deletedCount: result.deletedCount };
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                return { deletedCount: 0 };
+            }
+            throw error;
+        }
+    }, callback);
 };
 
 // Admin operations
 const getAllUsers = (callback) => {
-    // First check if user_id column exists in transactions table
-    db.all(`PRAGMA table_info(transactions)`, (err, rows) => {
-        if (err) {
-            return callback(err);
-        }
+    callbackWrapper(async () => {
+        await connectDB();
+        const users = await usersCollection
+            .aggregate([
+                {
+                    $lookup: {
+                        from: 'profiles',
+                        localField: '_id',
+                        foreignField: 'user_id',
+                        as: 'profile'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'transactions',
+                        localField: '_id',
+                        foreignField: 'user_id',
+                        as: 'transactions'
+                    }
+                },
+                {
+                    $unwind: {
+                        path: '$profile',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $project: {
+                        id: { $toString: '$_id' },
+                        email: 1,
+                        role: { $ifNull: ['$role', 'user'] },
+                        created_at: 1,
+                        name: '$profile.name',
+                        phone_number: '$profile.phone_number',
+                        account_number: '$profile.account_number',
+                        transaction_count: { $size: '$transactions' }
+                    }
+                },
+                {
+                    $sort: { created_at: -1 }
+                }
+            ])
+            .toArray();
         
-        const hasUserId = rows && rows.some(col => col.name === 'user_id');
-        
-        if (hasUserId) {
-            // Use the full query with user_id
-            db.all(`
-                SELECT u.id, u.email, u.role, u.created_at,
-                       p.name, p.phone_number, p.account_number,
-                       (SELECT COUNT(*) FROM transactions WHERE user_id = u.id) as transaction_count
-                FROM users u
-                LEFT JOIN profiles p ON u.id = p.user_id
-                ORDER BY u.created_at DESC
-            `, callback);
-        } else {
-            // Fallback: query without user_id (for old databases)
-            db.all(`
-                SELECT u.id, u.email, COALESCE(u.role, 'user') as role, u.created_at,
-                       p.name, p.phone_number, p.account_number,
-                       0 as transaction_count
-                FROM users u
-                LEFT JOIN profiles p ON u.id = p.user_id
-                ORDER BY u.created_at DESC
-            `, callback);
-        }
-    });
+        return users;
+    }, callback);
 };
 
 const updateUserRole = (userId, role, callback) => {
-    db.run('UPDATE users SET role = ? WHERE id = ?', [role, userId], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const result = await usersCollection.updateOne(
+                { _id: new ObjectId(userId) },
+                { $set: { role } }
+            );
+            return { modifiedCount: result.modifiedCount };
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                throw new Error('Invalid user ID');
+            }
+            throw error;
+        }
+    }, callback);
 };
 
 const deleteUser = (userId, callback) => {
-    db.run('DELETE FROM users WHERE id = ?', [userId], callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const userIdObj = new ObjectId(userId);
+            
+            // Delete user and related data (cascade)
+            await Promise.all([
+                usersCollection.deleteOne({ _id: userIdObj }),
+                profilesCollection.deleteOne({ user_id: userIdObj }),
+                transactionsCollection.deleteMany({ user_id: userIdObj }),
+                activitiesCollection.updateMany(
+                    { user_id: userIdObj },
+                    { $set: { user_id: null } }
+                )
+            ]);
+            
+            return { deleted: true };
+        } catch (error) {
+            if (error.message.includes('invalid ObjectId')) {
+                throw new Error('Invalid user ID');
+            }
+            throw error;
+        }
+    }, callback);
 };
+
+// Major activities that should be tracked in admin dashboard
+const MAJOR_ACTIVITIES = [
+    'REGISTER',
+    'DELETE_USER',
+    'UPDATE_USER_ROLE',
+    'DELETE_ALL_TRANSACTIONS',
+    'DELETE_TRANSACTION'
+];
 
 // Activity logging operations
 const logActivity = (activity, callback) => {
     const { user_id, action, entity_type, entity_id, details, ip_address, user_agent } = activity;
-    db.run(
-        `INSERT INTO activities (user_id, action, entity_type, entity_id, details, ip_address, user_agent) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [user_id, action, entity_type, entity_id, details, ip_address, user_agent],
-        function(err) {
-            if (err) return callback(err);
-            callback(null, { id: this.lastID });
+    
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const activityDoc = {
+                user_id: user_id ? new ObjectId(user_id) : null,
+                action,
+                entity_type: entity_type || null,
+                entity_id: entity_id ? (typeof entity_id === 'string' && ObjectId.isValid(entity_id) ? new ObjectId(entity_id) : entity_id) : null,
+                details: typeof details === 'string' ? details : (details ? JSON.stringify(details) : null),
+                ip_address: ip_address || null,
+                user_agent: user_agent || null,
+                created_at: new Date()
+            };
+            
+            const result = await activitiesCollection.insertOne(activityDoc);
+            return { id: result.insertedId.toString() };
+        } catch (error) {
+            // Don't fail if activity logging fails
+            console.error('Error logging activity:', error);
+            return { id: null };
         }
-    );
+    }, callback);
 };
 
 const getActivities = (filters, callback) => {
-    let query = 'SELECT a.*, u.email as user_email FROM activities a LEFT JOIN users u ON a.user_id = u.id WHERE 1=1';
-    const params = [];
+    callbackWrapper(async () => {
+        await connectDB();
+        try {
+            const query = {};
 
-    if (filters.user_id) {
-        query += ' AND a.user_id = ?';
-        params.push(filters.user_id);
-    }
+            // Filter to only show major activities
+            query.action = { $in: MAJOR_ACTIVITIES };
 
-    if (filters.action) {
-        query += ' AND a.action = ?';
-        params.push(filters.action);
-    }
+            if (filters.user_id) {
+                query.user_id = new ObjectId(filters.user_id);
+            }
 
-    if (filters.start_date) {
-        query += ' AND a.created_at >= ?';
-        params.push(filters.start_date);
-    }
+            if (filters.action) {
+                // If specific action is requested, ensure it's a major activity
+                if (MAJOR_ACTIVITIES.includes(filters.action)) {
+                    query.action = filters.action;
+                } else {
+                    // Return empty if non-major activity is requested
+                    return [];
+                }
+            }
 
-    if (filters.end_date) {
-        query += ' AND a.created_at <= ?';
-        params.push(filters.end_date);
-    }
-
-    query += ' ORDER BY a.created_at DESC LIMIT ? OFFSET ?';
-    params.push(filters.limit || 100, filters.offset || 0);
-
-    db.all(query, params, callback);
+            if (filters.start_date || filters.end_date) {
+                query.created_at = {};
+                if (filters.start_date) {
+                    query.created_at.$gte = new Date(filters.start_date);
+                }
+                if (filters.end_date) {
+                    query.created_at.$lte = new Date(filters.end_date);
+                }
+            }
+            
+            const activities = await activitiesCollection
+                .aggregate([
+                    { $match: query },
+                    {
+                        $lookup: {
+                            from: 'users',
+                            localField: 'user_id',
+                            foreignField: '_id',
+                            as: 'user'
+                        }
+                    },
+                    {
+                        $unwind: {
+                            path: '$user',
+                            preserveNullAndEmptyArrays: true
+                        }
+                    },
+                    {
+                        $project: {
+                            id: { $toString: '$_id' },
+                            user_id: { $cond: [{ $ne: ['$user_id', null] }, { $toString: '$user_id' }, null] },
+                            user_email: '$user.email',
+                            action: 1,
+                            entity_type: 1,
+                            entity_id: { $cond: [{ $ne: ['$entity_id', null] }, { $toString: '$entity_id' }, null] },
+                            details: 1,
+                            ip_address: 1,
+                            user_agent: 1,
+                            created_at: 1
+                        }
+                    },
+                    {
+                        $sort: { created_at: -1 }
+                    },
+                    {
+                        $limit: filters.limit || 100
+                    },
+                    {
+                        $skip: filters.offset || 0
+                    }
+                ])
+                .toArray();
+            
+            return activities;
+        } catch (error) {
+            console.error('Error fetching activities:', error);
+            return [];
+        }
+    }, callback);
 };
 
 const getActivityStats = (callback) => {
-    db.all(`
-        SELECT 
-            DATE(created_at) as date,
-            COUNT(*) as count,
-            COUNT(DISTINCT user_id) as unique_users
-        FROM activities
-        WHERE created_at >= datetime('now', '-30 days')
-        GROUP BY DATE(created_at)
-        ORDER BY date DESC
-    `, callback);
+    callbackWrapper(async () => {
+        await connectDB();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const stats = await activitiesCollection
+            .aggregate([
+                {
+                    $match: {
+                        created_at: { $gte: thirtyDaysAgo },
+                        action: { $in: MAJOR_ACTIVITIES }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            $dateToString: {
+                                format: '%Y-%m-%d',
+                                date: '$created_at'
+                            }
+                        },
+                        count: { $sum: 1 },
+                        unique_users: { $addToSet: '$user_id' }
+                    }
+                },
+                {
+                    $project: {
+                        date: '$_id',
+                        count: 1,
+                        unique_users: { $size: '$unique_users' }
+                    }
+                },
+                {
+                    $sort: { date: -1 }
+                }
+            ])
+            .toArray();
+        
+        return stats;
+    }, callback);
 };
 
 const getSystemStats = (callback) => {
-    db.all(`
-        SELECT 
-            (SELECT COUNT(*) FROM users) as total_users,
-            (SELECT COUNT(*) FROM users WHERE role = 'admin') as admin_count,
-            (SELECT COUNT(*) FROM transactions) as total_transactions,
-            (SELECT COUNT(*) FROM profiles) as total_profiles,
-            (SELECT COUNT(*) FROM activities WHERE created_at >= datetime('now', '-24 hours')) as activities_today
-    `, (err, rows) => {
-        if (err) return callback(err);
-        callback(null, rows[0]);
-    });
+    callbackWrapper(async () => {
+        await connectDB();
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        
+        const [usersCount, adminCount, transactionsCount, profilesCount, activitiesToday] = await Promise.all([
+            usersCollection.countDocuments(),
+            usersCollection.countDocuments({ role: 'admin' }),
+            transactionsCollection.countDocuments(),
+            profilesCollection.countDocuments(),
+            activitiesCollection.countDocuments({ 
+                created_at: { $gte: twentyFourHoursAgo },
+                action: { $in: MAJOR_ACTIVITIES }
+            })
+        ]);
+        
+        return {
+            total_users: usersCount,
+            admin_count: adminCount,
+            total_transactions: transactionsCount,
+            total_profiles: profilesCount,
+            activities_today: activitiesToday
+        };
+    }, callback);
 };
 
+// Function to create default admin user
+const createDefaultAdmin = async () => {
+    try {
+        await connectDB();
+        
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+        const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+        
+        // Skip admin creation if credentials are not provided
+        if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+            console.log('   Admin credentials not provided. Skipping default admin user creation.');
+            console.log('   Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables to auto-create admin user.');
+            return;
+        }
+        
+        const { hashPassword } = require('./utils/auth');
+        
+        const existingUser = await usersCollection.findOne({ email: ADMIN_EMAIL });
+        
+        if (existingUser) {
+            // Check if user is already admin
+            if (existingUser.role === 'admin') {
+                console.log('✅ Default admin user already exists');
+                return;
+            }
+            
+            // Update existing user to admin
+            await usersCollection.updateOne(
+                { email: ADMIN_EMAIL },
+                { $set: { role: 'admin' } }
+            );
+            console.log('✅ Default admin user role updated');
+            return;
+        }
+        
+        // Create new admin user
+        const passwordHash = await hashPassword(ADMIN_PASSWORD);
+        const user = {
+            email: ADMIN_EMAIL,
+            password_hash: passwordHash,
+            role: 'admin',
+            created_at: new Date()
+        };
+        
+        await usersCollection.insertOne(user);
+        console.log('✅ Default admin user created successfully');
+        console.log(`   Email: ${ADMIN_EMAIL}`);
+    } catch (error) {
+        console.error('Error creating default admin user:', error);
+    }
+};
+
+// Export a db object for backwards compatibility (though it's not used the same way)
 module.exports = {
-    db,
+    db: {
+        // Provide a get method for admin middleware compatibility
+        get: (query, params, callback) => {
+            if (query.includes('SELECT role FROM users WHERE id')) {
+                getUserRoleById(params[0], (err, user) => {
+                    if (err) return callback(err);
+                    callback(null, user || null);
+                });
+            } else {
+                callback(new Error('Unsupported query'));
+            }
+        }
+    },
     createUser,
     getUserByEmail,
     getUserById,
+    getUserRoleById,
     createOrUpdateProfile,
     getProfile,
     createTransaction,
@@ -536,5 +855,6 @@ module.exports = {
     logActivity,
     getActivities,
     getActivityStats,
-    getSystemStats
+    getSystemStats,
+    MAJOR_ACTIVITIES
 };

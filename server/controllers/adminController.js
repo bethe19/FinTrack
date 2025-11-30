@@ -19,7 +19,6 @@ const getAllUsersHandler = (req, res) => {
             return res.status(500).json({ error: 'Failed to fetch users' });
         }
 
-        logUserActivity(req, 'VIEW_USERS', 'users', null, { count: users.length });
         res.json(users);
     });
 };
@@ -52,7 +51,7 @@ const updateUserRoleHandler = (req, res) => {
 const deleteUserHandler = (req, res) => {
     const { userId } = req.params;
 
-    if (parseInt(userId) === req.userId) {
+    if (userId === req.userId) {
         return res.status(400).json({ error: 'Cannot delete your own account' });
     }
 
@@ -92,7 +91,6 @@ const getActivitiesHandler = (req, res) => {
             details: activity.details ? JSON.parse(activity.details) : null
         }));
 
-        logUserActivity(req, 'VIEW_ACTIVITIES', 'activities', null, { count: parsedActivities.length });
         res.json(parsedActivities);
     });
 };
@@ -107,7 +105,6 @@ const getActivityStatsHandler = (req, res) => {
             return res.status(500).json({ error: 'Failed to fetch activity statistics' });
         }
 
-        logUserActivity(req, 'VIEW_ACTIVITY_STATS', 'statistics', null);
         res.json(stats);
     });
 };
@@ -122,7 +119,6 @@ const getSystemStatsHandler = (req, res) => {
             return res.status(500).json({ error: 'Failed to fetch system statistics' });
         }
 
-        logUserActivity(req, 'VIEW_SYSTEM_STATS', 'statistics', null);
         res.json(stats);
     });
 };
@@ -141,7 +137,6 @@ const getAllTransactionsHandler = (req, res) => {
                 console.error('Error fetching transactions:', err);
                 return res.status(500).json({ error: 'Failed to fetch transactions' });
             }
-            logUserActivity(req, 'VIEW_USER_TRANSACTIONS', 'transactions', userId, { count: transactions.length });
             res.json(transactions);
         });
     } else {
@@ -151,7 +146,6 @@ const getAllTransactionsHandler = (req, res) => {
                 console.error('Error fetching all transactions:', err);
                 return res.status(500).json({ error: 'Failed to fetch transactions' });
             }
-            logUserActivity(req, 'VIEW_ALL_TRANSACTIONS', 'transactions', null, { count: transactions.length });
             res.json(transactions);
         });
     }

@@ -80,7 +80,7 @@ const AdminDashboard = ({ darkMode }) => {
             color: 'green'
         },
         {
-            title: 'Activities Today',
+            title: 'Major Activities Today',
             value: stats?.activities_today || 0,
             icon: Activity,
             color: 'orange'
@@ -95,7 +95,7 @@ const AdminDashboard = ({ darkMode }) => {
                     Admin Dashboard
                 </h1>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Overview of system statistics and activity
+                    Overview of system statistics and major activities
                 </p>
             </div>
 
@@ -128,7 +128,7 @@ const AdminDashboard = ({ darkMode }) => {
             {activityStats.length > 0 && (
                 <div className={`mb-8 p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
                     <h2 className={`text-xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-black'}`}>
-                        Activity Trends (Last 30 Days)
+                        Major Activity Trends (Last 30 Days)
                     </h2>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={activityStats}>
@@ -155,7 +155,7 @@ const AdminDashboard = ({ darkMode }) => {
                                 dataKey="count" 
                                 stroke="#3b82f6" 
                                 strokeWidth={2}
-                                name="Activities"
+                                name="Major Activities"
                             />
                             <Line 
                                 type="monotone" 
@@ -198,7 +198,7 @@ const AdminDashboard = ({ darkMode }) => {
                         <Activity className={`w-6 h-6 mb-2 ${darkMode ? 'text-white' : 'text-black'}`} />
                         <h3 className={`font-bold mb-1 ${darkMode ? 'text-white' : 'text-black'}`}>View Activities</h3>
                         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            Track all user activities
+                            Track major user activities
                         </p>
                     </button>
                     <button
@@ -221,4 +221,5 @@ const AdminDashboard = ({ darkMode }) => {
 };
 
 export default AdminDashboard;
+
 

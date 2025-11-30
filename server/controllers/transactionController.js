@@ -4,6 +4,7 @@ const {
     deleteTransaction,
     deleteAllTransactions
 } = require('../database');
+const { logActivity } = require('../database');
 const { parseBulkSMS } = require('../smsParser');
 const { parseCSVContent } = require('../csvParser');
 
@@ -106,6 +107,20 @@ const deleteTransactionHandler = (req, res) => {
             console.error('Error deleting transaction:', err);
             return res.status(500).json({ error: 'Failed to delete transaction' });
         }
+        
+        // Log major activity
+        const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
+        logActivity({
+            user_id: userId,
+            action: 'DELETE_TRANSACTION',
+            entity_type: 'transaction',
+            entity_id: id,
+            details: null,
+            ip_address: ipAddress,
+            user_agent: userAgent
+        }, () => {});
+        
         res.json({ success: true, message: 'Transaction deleted successfully' });
     });
 };
@@ -116,11 +131,25 @@ const deleteTransactionHandler = (req, res) => {
 const deleteAllTransactionsHandler = (req, res) => {
     const userId = req.userId; // From auth middleware
     
-    deleteAllTransactions(userId, (err) => {
+    deleteAllTransactions(userId, (err, result) => {
         if (err) {
             console.error('Error deleting all transactions:', err);
             return res.status(500).json({ error: 'Failed to delete transactions' });
         }
+        
+        // Log major activity
+        const ipAddress = req.ip || req.connection?.remoteAddress || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
+        logActivity({
+            user_id: userId,
+            action: 'DELETE_ALL_TRANSACTIONS',
+            entity_type: 'transactions',
+            entity_id: null,
+            details: result ? JSON.stringify({ deletedCount: result.deletedCount }) : null,
+            ip_address: ipAddress,
+            user_agent: userAgent
+        }, () => {});
+        
         res.json({ success: true, message: 'All transactions deleted successfully' });
     });
 };

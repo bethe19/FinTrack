@@ -63,7 +63,7 @@ const AdminActivities = ({ darkMode }) => {
                             Activity Log
                         </h1>
                         <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            Track all user activities and system events
+                            Track major user activities and system events (registrations, deletions, role changes)
                         </p>
                     </div>
                     <div className={`w-12 h-12 border flex items-center justify-center ${darkMode ? 'bg-white text-black border-white' : 'bg-black text-white border-black'}`}>
@@ -87,7 +87,7 @@ const AdminActivities = ({ darkMode }) => {
                             type="text"
                             value={filters.action}
                             onChange={(e) => handleFilterChange('action', e.target.value)}
-                            placeholder="e.g., LOGIN, CREATE"
+                            placeholder="e.g., REGISTER, DELETE_USER"
                             className={`w-full px-3 py-2 border ${darkMode 
                                 ? 'bg-black border-gray-800 text-white' 
                                 : 'bg-white border-gray-300 text-black'
@@ -208,7 +208,10 @@ const AdminActivities = ({ darkMode }) => {
 
             {activities.length === 0 && (
                 <div className={`p-8 text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    No activities found
+                    <p className="mb-2">No major activities found</p>
+                    <p className="text-xs">
+                        Major activities include: User registrations, user deletions, role updates, and transaction deletions
+                    </p>
                 </div>
             )}
         </div>
@@ -216,4 +219,5 @@ const AdminActivities = ({ darkMode }) => {
 };
 
 export default AdminActivities;
+
 

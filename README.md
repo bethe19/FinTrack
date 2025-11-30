@@ -41,7 +41,7 @@ A modern, full-stack finance tracking application built with React and Node.js. 
 
 - **Node.js** - Runtime environment
 - **Express** - Web framework
-- **SQLite3** - Database
+- **MongoDB** - Database (MongoDB Atlas)
 - **JWT** - Authentication
 - **bcrypt** - Password hashing
 - **Multer** - File upload handling

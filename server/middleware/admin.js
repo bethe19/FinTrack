@@ -1,5 +1,5 @@
 const { verifyToken } = require('../utils/auth');
-const { db } = require('../database');
+const { getUserRoleById } = require('../database');
 
 /**
  * Admin authentication middleware
@@ -26,20 +26,20 @@ const requireAdmin = (req, res, next) => {
             return res.status(401).json({ error: 'Invalid or expired token. Please login again.' });
         }
 
-        // Check role from database (users table has role column)
-        db.get('SELECT role FROM users WHERE id = ?', [decoded.userId], (err, row) => {
+        // Check role from database (users collection has role field)
+        getUserRoleById(decoded.userId, (err, user) => {
             if (err) {
                 console.error('Error checking user role:', err);
                 return res.status(500).json({ error: 'Failed to verify admin status' });
             }
 
-            if (!row || row.role !== 'admin') {
+            if (!user || user.role !== 'admin') {
                 return res.status(403).json({ error: 'Admin access required' });
             }
 
             // Attach user ID to request
             req.userId = decoded.userId;
-            req.userRole = row.role;
+            req.userRole = user.role;
             next();
         });
     } catch (error) {
