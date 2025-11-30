@@ -104,194 +104,165 @@ const FinancialInsights = ({ transactions, darkMode }) => {
                 </div>
             )}
 
-            {/* Overspent Months */}
-            {insights.overspentMonths.length > 0 && (
-                <div>
-                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                        <AlertTriangle className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
-                        <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-                            Overspent Months
-                        </h3>
-                    </div>
-                    <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
-                        <div className="space-y-3">
-                            {insights.overspentMonths.map((month, index) => (
-                                <div
-                                    key={month.month}
-                                    className={`p-3 sm:p-4 border ${
-                                        darkMode ? 'bg-gray-900 border-gray-800' : 'bg-red-50 border-red-200'
-                                    }`}
-                                >
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2 sm:gap-3">
-                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs sm:text-sm ${
-                                                darkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-600'
-                                            } font-bold flex-shrink-0`}>
-                                                #{index + 1}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-                                                    {month.monthName}
+            {/* Grid Layout: Overspent, Best Performing, and Spending Trends */}
+            {(insights.overspentMonths.length > 0 || insights.bestMonths.length > 0 || insights.spendingStreaks.length > 0) && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {/* Overspent Months */}
+                    {insights.overspentMonths.length > 0 && (
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                                <AlertTriangle className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                                <h3 className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                    Overspent
+                                </h3>
+                            </div>
+                            <div className={`flex-1 p-4 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                                <div className="space-y-3">
+                                    {insights.overspentMonths.slice(0, 3).map((month, index) => (
+                                        <div
+                                            key={month.month}
+                                            className={`p-3 border ${
+                                                darkMode ? 'bg-gray-900 border-gray-800' : 'bg-red-50 border-red-200'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-6 h-6 flex items-center justify-center text-xs ${
+                                                        darkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-600'
+                                                    } font-bold flex-shrink-0`}>
+                                                        #{index + 1}
+                                                    </div>
+                                                    <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                                        {month.monthName}
+                                                    </p>
+                                                </div>
+                                                <p className={`text-sm font-bold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                                    -{Math.abs(month.balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                                 </p>
-                                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                    Expenses exceeded income
-                                                </p>
+                                            </div>
+                                            <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-2 gap-2 text-xs`}>
+                                                <div>
+                                                    <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Income</p>
+                                                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                                        {month.income.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Expenses</p>
+                                                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                                        {month.expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="text-left sm:text-right w-full sm:w-auto">
-                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-red-400' : 'text-red-600'} flex items-center gap-1`}>
-                                                <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                ETB {Math.abs(month.balance).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                                Overspent
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-3 gap-2 sm:gap-4`}>
-                                        <div>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Income</p>
-                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
-                                                ETB {month.income.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expenses</p>
-                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
-                                                ETB {month.expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Balance</p>
-                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
-                                                ETB {month.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            {/* Best Months */}
-            {insights.bestMonths.length > 0 && (
-                <div>
-                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                        <Award className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
-                        <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-                            Best Performing Months
-                        </h3>
-                    </div>
-                    <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
-                        <div className="space-y-3">
-                            {insights.bestMonths.map((month, index) => (
-                                <div
-                                    key={month.month}
-                                    className={`p-3 sm:p-4 border ${
-                                        darkMode ? 'bg-gray-900 border-gray-800' : 'bg-green-50 border-green-200'
-                                    }`}
-                                >
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2 sm:gap-3">
-                                            <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xs sm:text-sm flex-shrink-0 ${
-                                                index === 0 
-                                                    ? darkMode ? 'bg-yellow-900/30 text-yellow-400 border-2 border-yellow-500' : 'bg-yellow-100 text-yellow-600 border-2 border-yellow-400'
-                                                    : darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
-                                            } font-bold`}>
-                                                {index === 0 ? (
-                                                    <Award className="w-4 h-4 sm:w-5 sm:h-5" />
-                                                ) : (
-                                                    `#${index + 1}`
-                                                )}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-                                                    {month.monthName}
+                    {/* Best Performing Months */}
+                    {insights.bestMonths.length > 0 && (
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                                <Award className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-green-400' : 'text-green-600'}`} />
+                                <h3 className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                    Best Performing
+                                </h3>
+                            </div>
+                            <div className={`flex-1 p-4 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                                <div className="space-y-3">
+                                    {insights.bestMonths.slice(0, 3).map((month, index) => (
+                                        <div
+                                            key={month.month}
+                                            className={`p-3 border ${
+                                                darkMode ? 'bg-gray-900 border-gray-800' : 'bg-green-50 border-green-200'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-6 h-6 flex items-center justify-center text-xs flex-shrink-0 ${
+                                                        index === 0 
+                                                            ? darkMode ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-500' : 'bg-yellow-100 text-yellow-600 border border-yellow-400'
+                                                            : darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+                                                    } font-bold`}>
+                                                        {index === 0 ? (
+                                                            <Award className="w-3 h-3" />
+                                                        ) : (
+                                                            `#${index + 1}`
+                                                        )}
+                                                    </div>
+                                                    <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                                        {month.monthName}
+                                                    </p>
+                                                </div>
+                                                <p className={`text-sm font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                                    +{month.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                                 </p>
-                                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                    Savings rate: {month.savingsRate.toFixed(1)}%
-                                                </p>
+                                            </div>
+                                            <div className={`pt-2 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-2 gap-2 text-xs`}>
+                                                <div>
+                                                    <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Income</p>
+                                                    <p className={`font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                                        {month.income.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Savings</p>
+                                                    <p className={`font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                                        {month.savingsRate.toFixed(1)}%
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="text-left sm:text-right w-full sm:w-auto">
-                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-green-400' : 'text-green-600'} flex items-center gap-1`}>
-                                                <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                                                ETB {month.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                                Saved
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className={`mt-3 pt-3 border-t ${darkMode ? 'border-gray-700' : 'border-gray-300'} grid grid-cols-3 gap-2 sm:gap-4`}>
-                                        <div>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Income</p>
-                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
-                                                ETB {month.income.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expenses</p>
-                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-white' : 'text-black'}`}>
-                                                ETB {month.expenses.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Balance</p>
-                                            <p className={`text-xs sm:text-sm font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                                ETB {month.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    )}
 
-            {/* Spending Streaks */}
-            {insights.spendingStreaks.length > 0 && (
-                <div>
-                    <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                        <Activity className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
-                        <h3 className={`text-lg sm:text-xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-                            Spending Trends
-                        </h3>
-                    </div>
-                    <div className={`p-4 sm:p-6 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
-                        <div className="space-y-3">
-                            {insights.spendingStreaks.map((streak, index) => (
-                                <div
-                                    key={index}
-                                    className={`p-3 sm:p-4 border ${
-                                        darkMode ? 'bg-gray-900 border-gray-800' : 'bg-orange-50 border-orange-200'
-                                    }`}
-                                >
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-                                                Increasing Spending Pattern
-                                            </p>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                                {streak.startMonth} → {streak.endMonth}
-                                            </p>
+                    {/* Spending Trends */}
+                    {insights.spendingStreaks.length > 0 && (
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                                <Activity className={`w-4 h-4 sm:w-5 sm:h-5 ${darkMode ? 'text-orange-400' : 'text-orange-600'}`} />
+                                <h3 className={`text-base sm:text-lg font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
+                                    Spending Trends
+                                </h3>
+                            </div>
+                            <div className={`flex-1 p-4 border ${darkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-300'}`}>
+                                <div className="space-y-3">
+                                    {insights.spendingStreaks.slice(0, 3).map((streak, index) => (
+                                        <div
+                                            key={index}
+                                            className={`p-3 border ${
+                                                darkMode ? 'bg-gray-900 border-gray-800' : 'bg-orange-50 border-orange-200'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-black'} mb-1`}>
+                                                        Increasing Pattern
+                                                    </p>
+                                                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                        {streak.startMonth} → {streak.endMonth}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={`text-sm font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                                                        +{streak.increase.toFixed(1)}%
+                                                    </p>
+                                                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                                        Increase
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="text-left sm:text-right">
-                                            <p className={`text-sm sm:text-base font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>
-                                                +{streak.increase.toFixed(1)}%
-                                            </p>
-                                            <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                                Increase
-                                            </p>
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
         </div>

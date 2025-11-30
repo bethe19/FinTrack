@@ -279,5 +279,15 @@ export const adminAPI = {
             throw new Error(error.error || 'Failed to fetch transactions');
         }
         return response.json();
+    },
+
+    // System Health
+    getSystemHealth: async () => {
+        const response = await authenticatedFetch(`${API_BASE_URL}/admin/health`);
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to fetch system health');
+        }
+        return response.json();
     }
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, Activity, BarChart3, Moon, Sun, Menu, X, LogOut, Shield } from 'lucide-react';
+import { Home, Users, Activity, BarChart3, Server, Moon, Sun, Menu, X, LogOut, Shield } from 'lucide-react';
 import { getUser } from '../utils/auth';
 
 const AdminLayout = ({ children, darkMode, setDarkMode, onLogout }) => {
@@ -13,6 +13,7 @@ const AdminLayout = ({ children, darkMode, setDarkMode, onLogout }) => {
         { name: 'Users', path: '/users', icon: Users },
         { name: 'Activities', path: '/activities', icon: Activity },
         { name: 'Reports', path: '/reports', icon: BarChart3 },
+        { name: 'System Health', path: '/health', icon: Server },
     ];
 
     const isActive = (path) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, FileText, TrendingUp, Wallet, Home as HomeIcon, PieChart, Settings, TrendingDown } from 'lucide-react';
+import { BarChart3, FileText, TrendingUp, Wallet, Home as HomeIcon, PieChart, Settings, TrendingDown, BarChart2 } from 'lucide-react';
 
 const Sidebar = ({ darkMode, data, onMenuSelect, activeMenu }) => {
     const menuItems = [
@@ -35,8 +35,9 @@ const Sidebar = ({ darkMode, data, onMenuSelect, activeMenu }) => {
             {/* Stats Banner */}
             {data && (
                 <div className={`mx-4 mb-6 p-4 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-gradient-to-br from-coral-50 to-orange-50'}`}>
-                    <p className={`text-sm font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        Quick Stats 📊
+                    <p className={`text-sm font-semibold mb-2 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <BarChart2 className="w-4 h-4" />
+                        Quick Stats
                     </p>
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">

@@ -8,19 +8,35 @@ const TransactionCalendar = ({ transactions, darkMode }) => {
     const transactionsByDate = useMemo(() => {
         const grouped = {};
         transactions.forEach(t => {
-            const date = new Date(t.transaction_date || t.created_at);
-            const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            // Safely parse date
+            const dateValue = t.transaction_date || t.created_at || t.date;
+            if (!dateValue) return; // Skip transactions without dates
             
-            if (!grouped[dateKey]) {
-                grouped[dateKey] = { income: 0, expense: 0, count: 0 };
-            }
+            const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
             
-            if (t.type === 'income') {
-                grouped[dateKey].income += t.amount || 0;
-            } else {
-                grouped[dateKey].expense += t.amount || 0;
+            // Validate date
+            if (isNaN(date.getTime())) return; // Skip invalid dates
+            
+            try {
+                const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+                
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = { income: 0, expense: 0, count: 0 };
+                }
+                
+                // Ensure amount is a number (handle string amounts from API)
+                const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+                
+                if (t.type === 'income') {
+                    grouped[dateKey].income += amount;
+                } else {
+                    grouped[dateKey].expense += amount;
+                }
+                grouped[dateKey].count += 1;
+            } catch (error) {
+                // Skip transactions that cause errors
+                console.warn('Error processing transaction date:', error);
             }
-            grouped[dateKey].count += 1;
         });
         return grouped;
     }, [transactions]);

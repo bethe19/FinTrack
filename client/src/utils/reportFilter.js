@@ -34,14 +34,14 @@ export const getDateRange = (reportType) => {
 
     switch (reportType) {
         case REPORT_TYPES.PER_MONTH:
-            startDate.setMonth(now.getMonth());
-            startDate.setDate(1);
+            // Set to first day of current month in current year
+            startDate.setFullYear(now.getFullYear(), now.getMonth(), 1);
             startDate.setHours(0, 0, 0, 0);
             break;
 
         case REPORT_TYPES.PER_YEAR:
-            startDate.setMonth(0);
-            startDate.setDate(1);
+            // Set to first day of January in current year
+            startDate.setFullYear(now.getFullYear(), 0, 1);
             startDate.setHours(0, 0, 0, 0);
             break;
 
@@ -63,6 +63,7 @@ export const filterTransactionsByReportType = (transactions, reportType) => {
     if (!transactions || transactions.length === 0) return transactions;
     
     if (reportType === REPORT_TYPES.ALL_TIME) {
+        // For all time, return all transactions without date filtering
         return transactions;
     }
 
@@ -70,7 +71,23 @@ export const filterTransactionsByReportType = (transactions, reportType) => {
     if (!dateRange) return transactions;
 
     return transactions.filter(transaction => {
-        const transactionDate = new Date(transaction.transaction_date || transaction.created_at);
+        // Use the already parsed date if available, otherwise parse it
+        let transactionDate;
+        
+        if (transaction.date instanceof Date) {
+            // Use the already parsed date from Overview component
+            transactionDate = transaction.date;
+        } else {
+            // Fallback: parse from raw data
+            const dateValue = transaction.transaction_date || transaction.created_at;
+            if (!dateValue) return false; // Exclude transactions without dates
+            
+            transactionDate = dateValue instanceof Date ? dateValue : new Date(dateValue);
+            
+            // Validate date
+            if (isNaN(transactionDate.getTime())) return false; // Exclude invalid dates
+        }
+        
         return transactionDate >= dateRange.startDate && transactionDate <= dateRange.endDate;
     });
 };

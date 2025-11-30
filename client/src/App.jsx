@@ -11,6 +11,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminActivities from './pages/AdminActivities';
 import AdminReports from './pages/AdminReports';
+import AdminSystemHealth from './pages/AdminSystemHealth';
 import { healthCheck } from './services/api';
 import { isAuthenticated, removeToken, removeUser, getUser } from './utils/auth';
 
@@ -103,6 +104,7 @@ function App() {
                                 <Route path="/users" element={<AdminUsers darkMode={darkMode} />} />
                                 <Route path="/activities" element={<AdminActivities darkMode={darkMode} />} />
                                 <Route path="/reports" element={<AdminReports darkMode={darkMode} />} />
+                                <Route path="/health" element={<AdminSystemHealth darkMode={darkMode} />} />
                                 <Route path="*" element={<Navigate to="/" replace />} />
                             </Routes>
                         </AdminLayout>

@@ -10,6 +10,7 @@ const {
     getSystemStatsHandler,
     getAllTransactionsHandler
 } = require('../controllers/adminController');
+const { getSystemHealth } = require('../controllers/healthController');
 
 // All admin routes require admin authentication
 router.use(requireAdmin);
@@ -28,6 +29,9 @@ router.get('/stats', getSystemStatsHandler);
 
 // Transactions (admin view)
 router.get('/transactions', getAllTransactionsHandler);
+
+// System health
+router.get('/health', getSystemHealth);
 
 module.exports = router;
 

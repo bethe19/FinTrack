@@ -22,7 +22,15 @@ export const analyzeFinancialInsights = (transactions) => {
     const monthlyData = {};
     
     transactions.forEach(transaction => {
-        const date = new Date(transaction.transaction_date || transaction.created_at);
+        // Safely parse date
+        const dateValue = transaction.transaction_date || transaction.created_at || transaction.date;
+        if (!dateValue) return; // Skip transactions without dates
+        
+        const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+        
+        // Validate date
+        if (isNaN(date.getTime())) return; // Skip invalid dates
+        
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         
         if (!monthlyData[monthKey]) {
@@ -35,10 +43,15 @@ export const analyzeFinancialInsights = (transactions) => {
             };
         }
         
+        // Ensure amount is a number (handle string amounts from API)
+        const amount = typeof transaction.amount === 'number' 
+            ? transaction.amount 
+            : parseFloat(transaction.amount) || 0;
+        
         if (transaction.type === 'income') {
-            monthlyData[monthKey].income += transaction.amount;
+            monthlyData[monthKey].income += amount;
         } else if (transaction.type === 'expense') {
-            monthlyData[monthKey].expenses += transaction.amount;
+            monthlyData[monthKey].expenses += amount;
         }
         
         monthlyData[monthKey].transactions.push(transaction);

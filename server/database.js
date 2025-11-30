@@ -1,7 +1,7 @@
 const { MongoClient, ObjectId } = require('mongodb');
 
 // MongoDB connection URL from environment variable
-const DATABASE_URL = process.env.DATABASE || 'mongodb+srv://bethebayou:DtIBXlaiOWG8sX26@cluster0.z28u54q.mongodb.net/FinTrack?retryWrites=true&w=majority&appName=Cluster0';
+const DATABASE_URL = process.env.DATABASE;
 const DATABASE_NAME = 'FinTrack';
 
 let client = null;
@@ -836,6 +836,7 @@ module.exports = {
             }
         }
     },
+    connectDB,
     createUser,
     getUserByEmail,
     getUserById,

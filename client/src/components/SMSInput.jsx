@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, Send, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { MessageSquare, Send, Loader2, CheckCircle, XCircle, Lightbulb } from 'lucide-react';
 import { transactionAPI } from '../services/api';
 
 const SMSInput = ({ onSuccess, onClose, darkMode }) => {
@@ -133,8 +133,9 @@ const SMSInput = ({ onSuccess, onClose, darkMode }) => {
             </form>
 
             <div className={`mt-6 p-4 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <strong>💡 Tip:</strong> You can paste multiple SMS messages at once. Separate them with blank lines or paste them as they appear in your messages app.
+                <p className={`text-sm flex items-start gap-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <Lightbulb className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span><strong>Tip:</strong> You can paste multiple SMS messages at once. Separate them with blank lines or paste them as they appear in your messages app.</span>
                 </p>
             </div>
         </div>

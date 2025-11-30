@@ -68,31 +68,111 @@ const Analytics = ({ darkMode }) => {
                 return;
             }
             
+            // Parse dates and format transactions (same as Overview)
+            let formatted = transactions
+                .map(t => {
+                    // Safely parse date - prefer transaction_date, but fallback to created_at
+                    let dateValue = null;
+                    
+                    // Try transaction_date first if it exists and is valid
+                    if (t.transaction_date) {
+                        const txDate = t.transaction_date;
+                        if (txDate !== '' && txDate !== null && txDate !== undefined) {
+                            if (txDate instanceof Date && !isNaN(txDate.getTime())) {
+                                dateValue = txDate;
+                            } else if (typeof txDate === 'string' && txDate.trim() !== '') {
+                                const parsed = new Date(txDate);
+                                if (!isNaN(parsed.getTime())) {
+                                    dateValue = parsed;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Fallback to created_at if transaction_date is not available or invalid
+                    if (!dateValue && t.created_at) {
+                        const createdDate = t.created_at;
+                        if (createdDate instanceof Date && !isNaN(createdDate.getTime())) {
+                            dateValue = createdDate;
+                        } else if (typeof createdDate === 'string' && createdDate.trim() !== '') {
+                            const parsed = new Date(createdDate);
+                            if (!isNaN(parsed.getTime())) {
+                                dateValue = parsed;
+                            }
+                        } else if (createdDate && typeof createdDate === 'object' && createdDate.toISOString) {
+                            try {
+                                dateValue = new Date(createdDate.toISOString());
+                            } catch (e) {
+                                // Ignore
+                            }
+                        }
+                    }
+                    
+                    // If we still don't have a valid date, skip this transaction
+                    if (!dateValue || isNaN(dateValue.getTime())) {
+                        return null;
+                    }
+                    
+                    return {
+                        ...t,
+                        date: dateValue
+                    };
+                })
+                .filter(t => t !== null);
+
+            // Get starting balance from oldest transaction in ALL transactions (before filtering)
+            // This represents the account balance at the start of recorded transactions
+            const allSortedByDate = [...formatted].sort((a, b) => a.date.getTime() - b.date.getTime());
+            const oldestTransaction = allSortedByDate[0];
+            const startingBalance = oldestTransaction && oldestTransaction.balance 
+                ? (typeof oldestTransaction.balance === 'number' 
+                    ? oldestTransaction.balance 
+                    : parseFloat(oldestTransaction.balance) || 0)
+                : 0;
+
             // Filter transactions based on report type
-            const filteredTransactions = filterTransactionsByReportType(transactions, reportType);
+            const filteredTransactions = filterTransactionsByReportType(formatted, reportType);
             
             // Calculate analytics from filtered transactions
             const income = filteredTransactions.filter(t => t.type === 'income');
             const expenses = filteredTransactions.filter(t => t.type === 'expense');
 
-            const totalIncome = income.reduce((sum, t) => sum + t.amount, 0);
-            const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
-            const balance = totalIncome - totalExpense;
+            // Ensure amounts are numbers (handle string amounts from API)
+            const totalIncome = income.reduce((sum, t) => {
+                const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+                return sum + amount;
+            }, 0);
+            
+            const totalExpense = expenses.reduce((sum, t) => {
+                const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+                return sum + amount;
+            }, 0);
+            
+            // Net Balance = Starting Balance + Total Income - Total Expenses
+            const balance = startingBalance + totalIncome - totalExpense;
 
             // Monthly breakdown
             const monthlyData = {};
             filteredTransactions.forEach(t => {
-                const date = new Date(t.transaction_date || t.created_at);
+                // Use the already parsed date
+                const date = t.date || new Date(t.transaction_date || t.created_at);
+                
+                // Validate date
+                if (isNaN(date.getTime())) return;
+                
                 const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = { month: monthKey, income: 0, expense: 0 };
                 }
 
+                // Ensure amount is a number
+                const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+
                 if (t.type === 'income') {
-                    monthlyData[monthKey].income += t.amount;
+                    monthlyData[monthKey].income += amount;
                 } else {
-                    monthlyData[monthKey].expense += t.amount;
+                    monthlyData[monthKey].expense += amount;
                 }
             });
 

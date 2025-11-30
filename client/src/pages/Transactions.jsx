@@ -80,8 +80,17 @@ const Transactions = ({ darkMode }) => {
         const income = filteredTransactions.filter(t => t.type === 'income');
         const expenses = filteredTransactions.filter(t => t.type === 'expense');
         
-        const totalIncome = income.reduce((sum, t) => sum + (t.amount || 0), 0);
-        const totalExpense = expenses.reduce((sum, t) => sum + (t.amount || 0), 0);
+        // Ensure amounts are numbers (handle string amounts from API)
+        const totalIncome = income.reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+            return sum + amount;
+        }, 0);
+        
+        const totalExpense = expenses.reduce((sum, t) => {
+            const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+            return sum + amount;
+        }, 0);
+        
         const balance = totalIncome - totalExpense;
         
         return {
